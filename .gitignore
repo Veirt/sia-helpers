@@ -1,0 +1,7 @@
+node_modules
+.env
+cookie.txt
+
+dist/
+data/*
+!data/.gitkeep
