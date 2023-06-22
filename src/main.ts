@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import fs from "fs";
 import * as cron from "node-cron";
 import pRetry, { AbortError } from "p-retry";
+import parseTranscript from "./parseTranscript.js";
 import puppeteer from "puppeteer-core";
 import { createHttpServer } from "./server.js";
 
@@ -114,12 +115,25 @@ async function saveTranscript() {
 
   const transcriptHtmlExist = fs.existsSync("data/transcript.html");
   if (transcriptHtmlExist) {
-    const oldTranscript = fs.readFileSync("data/transcript.html", "utf8");
-    const newTranscript = response!.data;
+    const oldTranscript = parseTranscript(
+      fs.readFileSync("data/transcript.html", "utf8")
+    );
+    const newTranscript = parseTranscript(response!.data);
 
-    if (oldTranscript !== newTranscript) {
-      console.log("Something changed.");
-      fs.writeFileSync("data/transcript.html", response!.data, "utf8");
+    for (const newData of newTranscript) {
+      const oldData = oldTranscript.find(
+        (oldData) => oldData.matakuliah === newData.matakuliah
+      );
+
+      // 'hacky' solution to check
+      const same = JSON.stringify(newData) === JSON.stringify(oldData);
+
+      if (!same) {
+        // that means something has changed
+        console.log("Something has changed.");
+        fs.writeFileSync("data/transcript.html", response!.data, "utf8");
+        break;
+      }
     }
   } else {
     fs.writeFileSync("data/transcript.html", response!.data, "utf8");
