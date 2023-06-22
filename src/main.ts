@@ -130,7 +130,7 @@ async function saveTranscript() {
 
       if (!same) {
         // that means something has changed
-        console.log("Something has changed.");
+        console.log(`${newData.matakuliah} has changed.`);
         fs.writeFileSync("data/transcript.html", response!.data, "utf8");
         break;
       }
