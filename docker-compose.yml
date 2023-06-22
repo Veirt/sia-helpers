@@ -6,6 +6,7 @@ services:
     environment:
       - NIM=
       - PASSWORD=
+      - TZ=Asia/Makassar
     volumes:
       - /path/to/data:/app/data
     ports:
