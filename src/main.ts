@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import fs from "fs";
 import * as cron from "node-cron";
 import pRetry, { AbortError } from "p-retry";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
 import { createHttpServer } from "./server.js";
 
 dotenv.config();
@@ -12,6 +12,7 @@ dotenv.config();
 const LOGIN_PAGE_URL = "https://sia.unmul.ac.id/login";
 
 async function getLoginCookie() {
+  console.log("Getting login cookie...");
   if (process.env.NIM === undefined || process.env.PASSWORD === undefined) {
     console.error("Please set environment variable NIM and PASSWORD first.");
     process.exit();
@@ -19,11 +20,13 @@ async function getLoginCookie() {
 
   try {
     const browser = await puppeteer.launch({
-      headless: "new",
-      product: "firefox",
+      headless: true,
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
     const page = await browser.newPage();
-    page.goto(LOGIN_PAGE_URL);
+    page.setDefaultNavigationTimeout(0);
+    page.goto(LOGIN_PAGE_URL, { waitUntil: "load", timeout: 0 });
 
     const captchaSelector = "div.form-group:nth-child(3) > div:nth-child(1)";
     const inputSelector = {
@@ -44,17 +47,18 @@ async function getLoginCookie() {
     await page.click(inputSelector.submit);
 
     const cookies = await page.cookies();
-    await browser.close();
 
     const ci_session_cookie = cookies.filter(
       (cookie) => cookie.name === "ci_session"
     )[0];
 
     fs.writeFileSync(
-      "cookie.txt",
+      "data/cookie.txt",
       `ci_session=${ci_session_cookie.value}`,
       "utf8"
     );
+
+    await browser.close();
   } catch (err) {
     console.error(err);
   }
@@ -82,12 +86,12 @@ async function fetchTranscript(cookie: string) {
 }
 
 async function saveTranscript() {
-  const cookieExist = fs.existsSync("cookie.txt");
+  const cookieExist = fs.existsSync("data/cookie.txt");
   if (!cookieExist) {
     await pRetry(getLoginCookie, { retries: 3 });
   }
 
-  const cookie = fs.readFileSync("cookie.txt", "utf8").trim();
+  const cookie = fs.readFileSync("data/cookie.txt", "utf8").trim();
 
   let response;
   try {

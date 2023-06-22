@@ -5,3 +5,4 @@ cookie.txt
 dist/
 data/*
 !data/.gitkeep
+docker-compose-dev.yml
