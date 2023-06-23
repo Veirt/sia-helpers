@@ -125,10 +125,8 @@ async function saveTranscript() {
         (oldData) => oldData.matakuliah === newData.matakuliah
       );
 
-      // 'hacky' solution to check
-      const same = JSON.stringify(newData) === JSON.stringify(oldData);
-
-      if (!same) {
+      const isSame = newData.keterangan === oldData?.keterangan;
+      if (!isSame) {
         // that means something has changed
         console.log(`${newData.matakuliah} has changed.`);
         fs.writeFileSync("data/transcript.html", response!.data, "utf8");
