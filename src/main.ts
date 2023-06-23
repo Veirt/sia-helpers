@@ -138,11 +138,6 @@ async function saveTranscript() {
   } else {
     fs.writeFileSync("data/transcript.html", response!.data, "utf8");
   }
-
-  const transcriptHtml = fs.readFileSync("data/transcript.html");
-  const $ = cheerio.load(transcriptHtml);
-  $(".row").remove();
-  fs.writeFileSync("data/transcript-render.html", $.html(), "utf8");
 }
 
 // run at the beginning
