@@ -70,7 +70,7 @@ export default function parseTranscript(transcript: string) {
     const wp = $(row.children[8]).html()!;
     const semester = parseInt($(row.children[10]).html()!);
     const sks = parseInt($(row.children[12]).html()!);
-    const nilai_angka = parseInt($(row.children[13]).html()!);
+    const nilai_angka = parseFloat($(row.children[13]).html()!);
     const nilai_huruf = $(row.children[15]).html()!;
     const bobot = parseInt($(row.children[17]).html()!);
 
