@@ -1,11 +1,10 @@
 import axios, { AxiosError } from "axios";
-import * as cheerio from "cheerio";
 import dotenv from "dotenv";
 import fs from "fs";
 import * as cron from "node-cron";
 import pRetry, { AbortError } from "p-retry";
-import parseTranscript from "./parseTranscript.js";
 import puppeteer from "puppeteer-core";
+import parseTranscript from "./parseTranscript.js";
 import { createHttpServer } from "./server.js";
 
 dotenv.config();
