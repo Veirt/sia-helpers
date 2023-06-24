@@ -27,7 +27,7 @@ async function getLoginCookie() {
     });
     const page = await browser.newPage();
     page.setDefaultNavigationTimeout(0);
-    page.goto(LOGIN_PAGE_URL, { waitUntil: "load", timeout: 0 });
+    await page.goto(LOGIN_PAGE_URL, { waitUntil: "load", timeout: 0 });
 
     const captchaSelector = "div.form-group:nth-child(3) > div:nth-child(1)";
     const inputSelector = {
