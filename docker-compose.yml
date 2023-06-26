@@ -6,6 +6,7 @@ services:
     environment:
       - NIM=
       - PASSWORD=
+      - DISCORD_WEBHOOK_URL=
       - TZ=Asia/Makassar
     volumes:
       - /path/to/data:/app/data

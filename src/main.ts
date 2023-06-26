@@ -11,6 +11,24 @@ dotenv.config();
 
 const LOGIN_PAGE_URL = "https://sia.unmul.ac.id/login";
 
+async function sendWithDiscordWebhook(content: object) {
+  const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
+  if (DISCORD_WEBHOOK_URL) {
+    const config = {
+      method: "POST",
+      url: DISCORD_WEBHOOK_URL,
+      headers: { "Content-Type": "application/json" },
+      data: JSON.stringify(content),
+    };
+
+    try {
+      await axios(config);
+    } catch (err) {
+      console.error(`Error when sending webhook: ${err}`);
+    }
+  }
+}
+
 async function getLoginCookie() {
   console.log("Getting login cookie...");
   if (process.env.NIM === undefined || process.env.PASSWORD === undefined) {
@@ -131,6 +149,20 @@ async function saveTranscript() {
         // that means something has changed
         console.log(`${newData.matakuliah} has changed.`);
         console.log(`${oldData!.nilai_angka} -> ${newData!.nilai_angka} `);
+        sendWithDiscordWebhook({
+          embeds: [
+            {
+              title: `${newData.matakuliah}`,
+              fields: [
+                {
+                  name: "nilai",
+                  value: `${oldData!.nilai_angka} -> ${newData!.nilai_angka}`,
+                },
+              ],
+            },
+          ],
+        });
+
         changed = true;
       }
     }
