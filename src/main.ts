@@ -113,6 +113,8 @@ async function saveTranscript() {
   }
 
   const transcriptHtmlExist = fs.existsSync("data/transcript.html");
+  let changed = false;
+
   if (transcriptHtmlExist) {
     const oldTranscript = parseTranscript(
       fs.readFileSync("data/transcript.html", "utf8")
@@ -128,13 +130,16 @@ async function saveTranscript() {
       if (!isSame) {
         // that means something has changed
         console.log(`${newData.matakuliah} has changed.`);
-        fs.writeFileSync("data/transcript.html", response!.data, "utf8");
-        break;
+        console.log(`${oldData!.nilai_angka} -> ${newData!.nilai_angka} `);
+        changed = true;
       }
     }
   } else {
     fs.writeFileSync("data/transcript.html", response!.data, "utf8");
+    return;
   }
+
+  if (changed) fs.writeFileSync("data/transcript.html", response!.data, "utf8");
 }
 
 // run at the beginning
