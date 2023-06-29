@@ -155,10 +155,13 @@ async function saveTranscript() {
               title: `${newData.matakuliah}`,
               fields: [
                 {
-                  name: "nilai",
+                  name: "Nilai",
                   value: `${oldData!.nilai_angka} -> ${newData!.nilai_angka}`,
                 },
               ],
+              footer: {
+                text: `${newData!.keterangan}`,
+              },
             },
           ],
         });
