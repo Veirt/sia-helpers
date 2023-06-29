@@ -1,15 +1,16 @@
 import axios, { AxiosError } from "axios";
+import * as cheerio from "cheerio";
 import dotenv from "dotenv";
 import fs from "fs";
 import * as cron from "node-cron";
 import pRetry, { AbortError } from "p-retry";
-import puppeteer from "puppeteer-core";
 import parseTranscript from "./parseTranscript.js";
 import { createHttpServer } from "./server.js";
 
 dotenv.config();
 
 const LOGIN_PAGE_URL = "https://sia.unmul.ac.id/login";
+const LOGIN_POST_URL = "https://sia.unmul.ac.id/loginpros";
 
 async function sendWithDiscordWebhook(content: object) {
   const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
@@ -29,6 +30,10 @@ async function sendWithDiscordWebhook(content: object) {
   }
 }
 
+function saveLoginCookie(cookie: string) {
+  fs.writeFileSync("data/cookie.txt", cookie, "utf8");
+}
+
 async function getLoginCookie() {
   console.log("Getting login cookie...");
   if (process.env.NIM === undefined || process.env.PASSWORD === undefined) {
@@ -36,50 +41,31 @@ async function getLoginCookie() {
     process.exit();
   }
 
-  try {
-    const browser = await puppeteer.launch({
-      headless: "new",
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
-    const page = await browser.newPage();
-    page.setDefaultNavigationTimeout(0);
-    await page.goto(LOGIN_PAGE_URL, { waitUntil: "load", timeout: 0 });
+  const loginPage = await axios.get(LOGIN_PAGE_URL, {
+    withCredentials: true,
+  });
+  const cookie = loginPage.headers["set-cookie"]!;
+  const ci_session_cookie = cookie[0].split(";")[0];
 
-    const captchaSelector = "div.form-group:nth-child(3) > div:nth-child(1)";
-    const inputSelector = {
-      email: "#exampleInputEmail",
-      password: "div.form-group:nth-child(2) > input:nth-child(1)",
-      captcha: "div.form-group:nth-child(4) > input:nth-child(1)",
-      submit: "button.btn",
-    };
-    await page.waitForSelector(captchaSelector);
+  const $ = cheerio.load(loginPage.data);
+  const captcha = $("div.form-group:nth-child(3) > div:nth-child(1)").html()!;
+  const data = new FormData();
+  data.append("usr", process.env.NIM);
+  data.append("pwd", process.env.PASSWORD);
+  data.append("sc", captcha);
 
-    const captcha = await page.$eval(
-      captchaSelector,
-      (element) => element.innerHTML
-    );
-    await page.type(inputSelector.email, process.env.NIM);
-    await page.type(inputSelector.password, process.env.PASSWORD);
-    await page.type(inputSelector.captcha, captcha);
-    await page.click(inputSelector.submit);
+  const loginResponse = await axios.post(LOGIN_POST_URL, data, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+      cookie: ci_session_cookie,
+    },
+  });
 
-    const cookies = await page.cookies();
-
-    const ci_session_cookie = cookies.filter(
-      (cookie) => cookie.name === "ci_session"
-    )[0];
-
-    fs.writeFileSync(
-      "data/cookie.txt",
-      `ci_session=${ci_session_cookie.value}`,
-      "utf8"
-    );
-
-    await browser.close();
-  } catch (err) {
-    console.error(err);
+  if (loginResponse.headers.refresh === "0;url=https://sia.unmul.ac.id/login") {
+    throw new AbortError(`Login failed`);
   }
+
+  saveLoginCookie(ci_session_cookie);
 }
 
 async function fetchTranscript(cookie: string) {
@@ -177,7 +163,7 @@ async function saveTranscript() {
   if (changed) fs.writeFileSync("data/transcript.html", response!.data, "utf8");
 }
 
-// run at the beginning
+// // run at the beginning
 await saveTranscript();
 cron.schedule("*/30 6-23 * * *", async () => {
   console.log(`[${new Date().toLocaleString()}] Running CRON job.`);
