@@ -134,7 +134,7 @@ async function saveTranscript() {
       if (!isSame) {
         // that means something has changed
         console.log(`${newData.matakuliah} has changed.`);
-        console.log(`${oldData!.nilai_angka} -> ${newData!.nilai_angka} `);
+
         sendWithDiscordWebhook({
           embeds: [
             {
@@ -142,7 +142,8 @@ async function saveTranscript() {
               fields: [
                 {
                   name: "Nilai",
-                  value: `${oldData!.nilai_angka} -> ${newData!.nilai_angka}`,
+                  value: `${oldData!.nilai_angka || 0} -> ${newData!.nilai_angka
+                    }`,
                 },
               ],
               footer: {
@@ -163,7 +164,7 @@ async function saveTranscript() {
   if (changed) fs.writeFileSync("data/transcript.html", response!.data, "utf8");
 }
 
-// // run at the beginning
+// run at the beginning
 await saveTranscript();
 cron.schedule("*/30 6-23 * * *", async () => {
   console.log(`[${new Date().toLocaleString()}] Running CRON job.`);
