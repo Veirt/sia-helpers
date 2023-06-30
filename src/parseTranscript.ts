@@ -72,7 +72,7 @@ export default function parseTranscript(transcript: string) {
     const sks = parseInt($(row.children[12]).html()!);
     const nilai_angka = parseFloat($(row.children[13]).html()!);
     const nilai_huruf = $(row.children[15]).html()!;
-    const bobot = parseInt($(row.children[17]).html()!);
+    const bobot = parseFloat($(row.children[17]).html()!);
 
     let keterangan = $(row.children[19]).html()!;
     const [nip, ...date] = keterangan.split(" ");
