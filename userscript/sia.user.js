@@ -3,7 +3,7 @@
 // @namespace   Violentmonkey Scripts
 // @match       *://sia.unmul.ac.id/*
 // @grant       none
-// @version     1.0
+// @version     1.0.1
 // @author      Veirt
 // @description 12/17/2022, 7:59:02 PM
 // ==/UserScript==
@@ -56,6 +56,7 @@ function loginCapthaSolver() {
     ).innerText;
 
     let inp = document.querySelector("input[name='sc']");
+    inp.removeAttribute("id"); // might interfere with bitwarden auto-fill
     inp.value = captcha;
 }
 
