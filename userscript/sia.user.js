@@ -109,18 +109,57 @@ function modifyTranscriptTable(_changes, observer) {
   }
 }
 
-switch (path) {
-  case "/login":
-    loginCapthaSolver();
-    break;
-  case "/pmhskrs/tambah":
-    highlightMyClass();
-    break;
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
+}
 
-  case "/mhstranskrip":
-    new MutationObserver(modifyTranscriptTable).observe(document, {
-      childList: true,
-      subtree: true,
-    });
-    break;
+function fillQuestionnaire() {
+  const questionnaireRows = document.querySelectorAll(
+    ".tab-pane.active > table > tbody > tr"
+  );
+
+  for (const row of questionnaireRows) {
+    const random = getRandomInt(3, 6);
+    const checkbox = row.children[random + 1].children[0];
+    checkbox.checked = true;
+  }
+}
+
+function tdQuestionnaireOnClick() {
+  const answerTd = document.querySelectorAll(
+    ".tab-pane.active > table > tbody > tr > td"
+  );
+
+  for (const td of answerTd) {
+    if (td.children.length) {
+      td.addEventListener("click", function () {
+        this.children[0].checked = true;
+      });
+    }
+  }
+}
+
+if (path.startsWith("/login")) {
+  loginCapthaSolver();
+} else if (path.startsWith("/pmhskrs/tambah")) {
+  highlightMyClass();
+} else if (path.startsWith("/mhstranskrip")) {
+  new MutationObserver(modifyTranscriptTable).observe(document, {
+    childList: true,
+    subtree: true,
+  });
+} else if (path.startsWith("/pmhskhs/kuisioner")) {
+  tdQuestionnaireOnClick();
+  document.addEventListener(
+    "keyup",
+    (e) => {
+      if (e.key.toLowerCase() === "q" && e.altKey) {
+        e.preventDefault();
+        fillQuestionnaire();
+      }
+    },
+    false
+  );
 }
