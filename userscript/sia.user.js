@@ -2,13 +2,19 @@
 // @name        SIA Unmul Userscript
 // @namespace   Violentmonkey Scripts
 // @match       *://sia.unmul.ac.id/*
+// @match       *://ais.unmul.ac.id/*
 // @grant       none
 // @version     1.0.1
 // @author      Veirt
 // @description 12/17/2022, 7:59:02 PM
 // ==/UserScript==
 
-let path = window.location.pathname;
+"use strict";
+
+const MY_CLASS = "Kelas B 2022";
+
+const path = window.location.pathname;
+const host = window.location.host;
 console.log(path);
 
 const LECTURER = {
@@ -51,18 +57,29 @@ const semesterColor = {
 };
 
 function loginCapthaSolver() {
-  let captcha = document.querySelector(
-    "body > div > div > div > div > div > form > div:nth-child(3) > div"
-  ).innerText;
+  const path = window.location.pathname;
 
-  let inp = document.querySelector("input[name='sc']");
-  inp.removeAttribute("id"); // might interfere with bitwarden auto-fill
-  inp.value = captcha;
+  let captcha;
+  let input;
+  if (host.startsWith("sia") && path === "/login") {
+    captcha = document.querySelector(
+      "body > div > div > div > div > div > form > div:nth-child(3) > div"
+    ).innerText;
+    input = document.querySelector("input[name='sc']");
+    input.removeAttribute("id"); // might interfere with bitwarden auto-fill if not removed
+  } else if (host.startsWith("ais") && path === "/") {
+    captcha = document.querySelector(".badge").innerText;
+    input = document.querySelector("input[name='login[sc]']");
+  }
+
+  if (input) input.value = captcha;
 }
 
-const MY_CLASS = "Kelas B 2022";
-
 function highlightMyClass() {
+  if (!path.startsWith("/pmhskrs/tambah")) {
+    return;
+  }
+
   const elements = document.getElementsByTagName("td");
   for (const e of elements) {
     if (e.innerText.includes(MY_CLASS)) {
@@ -77,34 +94,50 @@ function modifyTranscriptTable(_changes, observer) {
   if (!rows.length) {
     return;
   }
-  observer.disconnect();
+
+  // I sometimes change the dropdown when I'm in /pmhskhs.
+  if (path !== "/pmhskhs") observer.disconnect();
 
   for (const row of rows) {
-    if (row.childElementCount === 11) transcriptRows.push(row);
+    if (row.childElementCount === 11 || row.childElementCount === 12)
+      transcriptRows.push(row);
   }
 
   for (const transcriptRow of transcriptRows) {
-    const no = transcriptRow.children[0].innerHTML;
-    const kelas = transcriptRow.children[1].innerHTML;
-    const kode = transcriptRow.children[2].innerHTML;
-    const matakuliah = transcriptRow.children[3].innerHTML;
-    const wp = transcriptRow.children[4].innerHTML;
-    const semester = transcriptRow.children[5].innerHTML;
-    const sks = transcriptRow.children[6].innerHTML;
-    const nilai_angka = transcriptRow.children[7].innerHTML;
-    const nilai_huruf = transcriptRow.children[8].innerHTML;
-    const bobot = transcriptRow.children[9].innerHTML;
-    const keterangan = transcriptRow.children[10].innerHTML;
+    const transcript = {};
+
+    transcript.no = transcriptRow.children[0].innerHTML;
+    transcript.kelas = transcriptRow.children[1].innerHTML;
+    transcript.kode = transcriptRow.children[2].innerHTML;
+    transcript.matakuliah = transcriptRow.children[3].innerHTML;
+    transcript.wp = transcriptRow.children[4].innerHTML;
+    transcript.semester = transcriptRow.children[5].innerHTML;
+    transcript.sks = transcriptRow.children[6].innerHTML;
+    if (path === "/pmhskhs") {
+      transcript.ke = transcriptRow.children[7].innerHTML; // handle "ke" in /pmhskhs
+      transcript.nilai_angka = transcriptRow.children[8].innerHTML;
+      transcript.nilai_huruf = transcriptRow.children[9].innerHTML;
+      transcript.bobot = transcriptRow.children[10].innerHTML;
+      transcript.keterangan = transcriptRow.children[11].innerHTML;
+    } else {
+      transcript.nilai_angka = transcriptRow.children[7].innerHTML;
+      transcript.nilai_huruf = transcriptRow.children[8].innerHTML;
+      transcript.bobot = transcriptRow.children[9].innerHTML;
+      transcript.keterangan = transcriptRow.children[10].innerHTML;
+    }
 
     // highlight semester
-    if (semester in semesterColor) {
-      transcriptRow.style.backgroundColor = semesterColor[semester];
+    if (transcript.semester in semesterColor) {
+      transcriptRow.style.backgroundColor = semesterColor[transcript.semester];
     }
 
     // change lecturer NIP to name
-    const [nip, ...date] = keterangan.split(" ");
+    const [nip, ...date] = transcript.keterangan.split(" ");
     if (nip !== "" && LECTURER[nip] !== undefined) {
-      transcriptRow.children[10].innerHTML = `${LECTURER[nip]}<br/>${date}`;
+      const keteranganIdx = path === "/pmhskhs" ? 11 : 10;
+      transcriptRow.children[
+        keteranganIdx
+      ].innerHTML = `${LECTURER[nip]}<br/>${date}`;
     }
   }
 }
@@ -141,25 +174,28 @@ function tdQuestionnaireOnClick() {
   }
 }
 
-if (path.startsWith("/login")) {
+(function () {
+  "use strict";
   loginCapthaSolver();
-} else if (path.startsWith("/pmhskrs/tambah")) {
   highlightMyClass();
-} else if (path.startsWith("/mhstranskrip")) {
-  new MutationObserver(modifyTranscriptTable).observe(document, {
-    childList: true,
-    subtree: true,
-  });
-} else if (path.startsWith("/pmhskhs/kuisioner")) {
-  tdQuestionnaireOnClick();
-  document.addEventListener(
-    "keyup",
-    (e) => {
-      if (e.key.toLowerCase() === "q" && e.altKey) {
-        e.preventDefault();
-        fillQuestionnaire();
-      }
-    },
-    false
-  );
-}
+
+  if (path.startsWith("/mhstranskrip") || path === "/pmhskhs") {
+    const observer = new MutationObserver(modifyTranscriptTable);
+    observer.observe(document.querySelector("#response"), {
+      childList: true,
+    });
+  }
+
+  if (path.startsWith("/pmhskhs/kuisioner")) {
+    tdQuestionnaireOnClick();
+    document.addEventListener(
+      "keydown",
+      (e) => {
+        if (e.key.toLowerCase() === "q" && e.altKey) {
+          fillQuestionnaire();
+        }
+      },
+      false
+    );
+  }
+})();
