@@ -56,26 +56,29 @@ const semesterColor = {
   7: "MediumSeaGreen",
 };
 
-function loginCapthaSolver() {
-  const path = window.location.pathname;
-
-  let captcha;
-  let input;
-  if (host.startsWith("sia") && path === "/login") {
-    captcha = document.querySelector(
-      "body > div > div > div > div > div > form > div:nth-child(3) > div",
-    ).innerText;
-    input = document.querySelector("input[name='sc']");
-    input.removeAttribute("id"); // might interfere with bitwarden auto-fill if not removed
-  } else if (host.startsWith("ais") && path === "/") {
-    captcha = document.querySelector(".badge").innerText;
-    input = document.querySelector("input[name='login[sc]']");
-  }
+function loginCaptchaSolver() {
+  let captcha = document.querySelector(".badge").innerText;
+  let input = document.querySelector("input[name='login[sc]']");
 
   if (input) input.value = captcha;
 }
 
-function highlightMyClass() {
+/*
+  DEPRECATED.
+*/
+function siaLoginCaptchaSolver() {
+  const path = window.location.pathname;
+  if (host.startsWith("sia") && path === "/login") {
+    let captcha = document.querySelector(
+      "body > div > div > div > div > div > form > div:nth-child(3) > div",
+    ).innerText;
+    let input = document.querySelector("input[name='sc']");
+    input.removeAttribute("id"); // might interfere with bitwarden auto-fill if not removed
+    if (input) input.value = captcha;
+  }
+}
+
+function siaHighlightMyClass() {
   if (!path.startsWith("/pmhskrs/tambah")) {
     return;
   }
@@ -88,7 +91,7 @@ function highlightMyClass() {
   }
 }
 
-function modifyTranscriptTable(_changes, observer) {
+function siaModifyTranscriptTable(_changes, observer) {
   const rows = document.querySelectorAll("tbody > tr");
   const transcriptRows = [];
   if (!rows.length) {
@@ -148,6 +151,19 @@ function getRandomInt(min, max) {
 }
 
 function fillQuestionnaire() {
+  const radioForms = document.querySelectorAll(".col-sm-4 > .radio-form");
+
+  for (const radioForm of radioForms) {
+    // index 2 to 4 ( rating 3 to 5 )
+    const random = getRandomInt(2, 5);
+
+    const radios = radioForm.children;
+    const radio = radios[random].children[0];
+    radio.checked = true;
+  }
+}
+
+function siaFillQuestionnaire() {
   const questionnaireRows = document.querySelectorAll(
     ".tab-pane.active > table > tbody > tr",
   );
@@ -159,45 +175,49 @@ function fillQuestionnaire() {
   }
 }
 
-function tdQuestionnaireOnClick() {
-  const answerTd = document.querySelectorAll(
-    ".tab-pane.active > table > tbody > tr > td",
-  );
+(function () {
+  "use strict";
 
-  for (const td of answerTd) {
-    if (td.children.length) {
-      td.addEventListener("click", function () {
-        this.children[0].checked = true;
+  // SIA
+  if (host.startsWith("sia")) {
+    siaLoginCaptchaSolver();
+    siaHighlightMyClass();
+
+    // transkrip
+    if (path.startsWith("/mhstranskrip") || path === "/pmhskhs") {
+      const observer = new MutationObserver(siaModifyTranscriptTable);
+      observer.observe(document.querySelector("#response"), {
+        childList: true,
+      });
+    }
+
+    // kuisioner
+    if (path.startsWith("/pmhskhs/kuisioner")) {
+      document.addEventListener("keydown", (e) => {
+        if (e.key.toLowerCase() === "q" && e.altKey) {
+          siaFillQuestionnaire();
+        }
       });
     }
   }
-}
 
-(function () {
-  "use strict";
-  loginCapthaSolver();
-  highlightMyClass();
+  // AIS
+  if (host.startsWith("ais")) {
+    if (path === "/") {
+      loginCaptchaSolver();
+    }
 
-  if (path.startsWith("/mhstranskrip") || path === "/pmhskhs") {
-    const observer = new MutationObserver(modifyTranscriptTable);
-    observer.observe(document.querySelector("#response"), {
-      childList: true,
-    });
-  }
+    // benerin back button
+    const backButton = document.querySelector(".btn.btn-danger-gradien.btn-lg");
+    if (backButton) backButton.href = document.referrer;
 
-  const backButton = document.querySelector(".btn.btn-danger-gradien.btn-lg");
-  backButton.href = document.referrer;
-
-  if (path.startsWith("/pmhskhs/kuisioner")) {
-    tdQuestionnaireOnClick();
-    document.addEventListener(
-      "keydown",
-      (e) => {
+    // auto fill kuisioner
+    if (path.startsWith("/mahasiswa/khs")) {
+      document.addEventListener("keydown", (e) => {
         if (e.key.toLowerCase() === "q" && e.altKey) {
           fillQuestionnaire();
         }
-      },
-      false,
-    );
+      });
+    }
   }
 })();
