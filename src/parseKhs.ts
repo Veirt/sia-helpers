@@ -7,8 +7,8 @@ export type KHS = {
     dosen: Array<String>;
     wp: string;
     sks: number;
-    nilai_angka: number;
-    nilai_huruf: string;
+    nilaiAngka: number;
+    nilaiHuruf: string;
     bobot: number;
     sksxbobot: number;
 };
@@ -37,13 +37,14 @@ export default function parseKhs(khs: string) {
             dosen.push($(prof).html()!.trim());
         }
 
-        let nilai_angka = parseInt($(row.children[13]).html()!);
-        nilai_angka = isNaN(nilai_angka) ? 0 : nilai_angka;
+        // if NaN, convert it to 0.
+        let nilaiAngka = parseInt($(row.children[13]).html()!);
+        nilaiAngka = isNaN(nilaiAngka) ? 0 : nilaiAngka;
 
         const wp = $(row.children[9]).html()!;
         const sks = parseInt($(row.children[11]).html()!);
 
-        const nilai_huruf = $(row.children[15]).html()!;
+        const nilaiHuruf = $(row.children[15]).html()!;
         const bobot = parseInt($(row.children[17]).html()!);
         const sksxbobot = parseInt($(row.children[19]).html()!);
 
@@ -54,8 +55,8 @@ export default function parseKhs(khs: string) {
             dosen,
             wp,
             sks,
-            nilai_angka,
-            nilai_huruf,
+            nilaiAngka,
+            nilaiHuruf,
             bobot,
             sksxbobot,
         });

@@ -133,7 +133,7 @@ async function saveKHS() {
     for (const newKHSDetail of newKHS) {
         const oldKHSDetail = oldKHS.find((detail) => newKHSDetail.matakuliah === detail.matakuliah)!;
 
-        if (newKHSDetail.nilai_angka !== oldKHSDetail!.nilai_angka) {
+        if (newKHSDetail.nilaiAngka !== oldKHSDetail!.nilaiAngka) {
             changedData.push({ old: oldKHSDetail, new: newKHSDetail });
             changed = true;
         }
@@ -151,7 +151,7 @@ async function saveKHS() {
                         fields: [
                             {
                                 name: "Nilai",
-                                value: `${data.old!.nilai_angka || 0} -> ${data.new!.nilai_angka}`,
+                                value: `${data.old!.nilaiAngka || 0} -> ${data.new!.nilaiAngka}`,
                             },
                         ],
                     },
