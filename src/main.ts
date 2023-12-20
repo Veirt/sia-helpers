@@ -43,11 +43,6 @@ async function getLoginCookie() {
         process.exit();
     }
 
-    if (process.env.TRANSCRIPT_URL === undefined) {
-        console.error("Please set environment variable: TRANSCRIPT_URL");
-        process.exit();
-    }
-
     // getting the captcha
     const loginPage = await axios.get(LOGIN_PAGE_URL, {
         withCredentials: true,
