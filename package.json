@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "dist/main.js",
   "type": "module",
-  "author": "Veirt <vveirt@gmail.com>",
+  "author": "Veirt",
   "dependencies": {
     "axios": "^1.4.0",
     "cheerio": "^1.0.0-rc.12",
