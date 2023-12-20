@@ -1,16 +1,16 @@
 import express from "express";
 import fs from "fs";
-import parseTranscript from "./parseTranscript.js";
+import parseKhs from "./parseKhs.js";
 
 const PORT = 8080;
 
 export function createHttpServer() {
     const app = express();
 
-    app.get("/api/transcript", (req, res) => {
-        const transcriptData = parseTranscript(fs.readFileSync("data/transcript.html", "utf8"));
+    app.get("/api/khs", (_req, res) => {
+        const khsData = parseKhs(fs.readFileSync("data/khs.html", "utf8"));
 
-        return res.send(transcriptData);
+        return res.send(khsData);
     });
 
     app.listen(PORT);

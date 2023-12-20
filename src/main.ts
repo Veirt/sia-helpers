@@ -1,16 +1,18 @@
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 import * as cheerio from "cheerio";
 import dotenv from "dotenv";
 import fs from "fs";
 import * as cron from "node-cron";
 import pRetry, { AbortError } from "p-retry";
-import parseTranscript from "./parseTranscript.js";
+import parseKhs, { KHS } from "./parseKhs.js";
 import { createHttpServer } from "./server.js";
 
 dotenv.config();
 
-const LOGIN_PAGE_URL = "https://sia.unmul.ac.id/login";
-const LOGIN_POST_URL = "https://sia.unmul.ac.id/loginpros";
+const LOGIN_PAGE_URL = "https://ais.unmul.ac.id";
+const LOGIN_POST_URL = "https://ais.unmul.ac.id/login/check";
+const KHS_URL = "https://ais.unmul.ac.id/mahasiswa/khs";
+const KHS_DETAIL_URL = "https://ais.unmul.ac.id/mahasiswa/khs/detail/";
 
 async function sendWithDiscordWebhook(content: object) {
     const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
@@ -41,19 +43,25 @@ async function getLoginCookie() {
         process.exit();
     }
 
+    if (process.env.TRANSCRIPT_URL === undefined) {
+        console.error("Please set environment variable: TRANSCRIPT_URL");
+        process.exit();
+    }
+
+    // getting the captcha
     const loginPage = await axios.get(LOGIN_PAGE_URL, {
         withCredentials: true,
     });
     const cookie = loginPage.headers["set-cookie"]!;
     const ci_session_cookie = cookie[0].split(";")[0];
-
     const $ = cheerio.load(loginPage.data);
-    const captcha = $("div.form-group:nth-child(3) > div:nth-child(1)").html()!;
-    const data = new FormData();
-    data.append("usr", process.env.NIM);
-    data.append("pwd", process.env.PASSWORD);
-    data.append("sc", captcha);
+    const captcha = $(".badge.badge-primary").html()!;
 
+    // login
+    const data = new FormData();
+    data.append("login[username]", process.env.NIM);
+    data.append("login[password]", process.env.PASSWORD);
+    data.append("login[sc]", captcha);
     const loginResponse = await axios.post(LOGIN_POST_URL, data, {
         headers: {
             "Content-Type": "multipart/form-data",
@@ -61,32 +69,35 @@ async function getLoginCookie() {
         },
     });
 
-    if (loginResponse.headers.refresh === "0;url=https://sia.unmul.ac.id/login") {
+    if (!loginResponse.data.status) {
         throw new AbortError(`Login failed`);
     }
 
     saveLoginCookie(ci_session_cookie);
 }
 
-async function fetchTranscript(cookie: string) {
+async function fetchKHS(cookie: string) {
     try {
-        const response = await axios.get("https://sia.unmul.ac.id/mhstranskrip/loaddatas", {
+        const khsPage = await axios.get(KHS_URL, {
             headers: { cookie },
         });
 
-        return response;
-    } catch (err) {
-        if (err instanceof AxiosError) {
-            if (err.response?.status) {
-                throw new AbortError(`Status code error: ${err.response.statusText}`);
-            }
+        const $ = cheerio.load(khsPage.data);
 
-            throw new Error(err.message);
-        }
+        // last child: newest, as of now. fix later if there is a new page
+        const key = $(".inbox-data.lihat:last-child").attr("data-key");
+
+        const khsDetail = await axios.get(`${KHS_DETAIL_URL}/${key}`, {
+            headers: { cookie },
+        });
+
+        return khsDetail;
+    } catch (err) {
+        console.error(`Error when fetching transcript: ${err}`);
     }
 }
 
-async function saveTranscript() {
+async function saveKHS() {
     const cookieExist = fs.existsSync("data/cookie.txt");
     if (!cookieExist) {
         await pRetry(getLoginCookie, { retries: 3 });
@@ -96,71 +107,70 @@ async function saveTranscript() {
 
     let response;
     try {
-        response = await pRetry(() => fetchTranscript(cookie), { retries: 3 });
+        response = await pRetry(() => fetchKHS(cookie), { retries: 3 });
         if (!response) {
             throw new Error("Response is empty.");
         }
 
-        if (response.headers.refresh === "0;url=https://sia.unmul.ac.id/login") {
+        if (response.status === 307) {
             console.log("Getting cookies and retrying request...");
             await pRetry(getLoginCookie, { retries: 3 });
 
-            response = await fetchTranscript(cookie);
+            response = await fetchKHS(cookie);
         }
     } catch (err) {
-        console.error("Failed fetching transcript.");
-        console.error(err);
+        console.error(`Failed fetching transcript: ${err}`);
         return;
     }
 
-    const transcriptHtmlExist = fs.existsSync("data/transcript.html");
+    const khsExist = fs.existsSync("data/khs.html");
+    if (!khsExist) {
+        fs.writeFileSync("data/khs.html", response!.data, "utf8");
+        return;
+    }
+
+    const newKHS = parseKhs(response!.data.html);
+    const oldKHS = parseKhs(fs.readFileSync("data/khs.html", "utf8"));
+
     let changed = false;
+    let changedData: { old: KHS; new: KHS }[] = [];
 
-    if (transcriptHtmlExist) {
-        const oldTranscript = parseTranscript(fs.readFileSync("data/transcript.html", "utf8"));
-        const newTranscript = parseTranscript(response!.data);
+    for (const newKHSDetail of newKHS) {
+        const oldKHSDetail = oldKHS.find((detail) => newKHSDetail.matakuliah === detail.matakuliah)!;
 
-        for (const newData of newTranscript) {
-            const oldData = oldTranscript.find((oldData) => oldData.matakuliah === newData.matakuliah);
-
-            const isSame = newData.keterangan === oldData?.keterangan;
-            if (!isSame) {
-                // that means something has changed
-                console.log(`${newData.matakuliah} has changed.`);
-
-                sendWithDiscordWebhook({
-                    embeds: [
-                        {
-                            title: `${newData.matakuliah}`,
-                            fields: [
-                                {
-                                    name: "Nilai",
-                                    value: `${oldData!.nilai_angka || 0} -> ${newData!.nilai_angka}`,
-                                },
-                            ],
-                            footer: {
-                                text: `${newData!.keterangan}`,
-                            },
-                        },
-                    ],
-                });
-
-                changed = true;
-            }
+        if (newKHSDetail.nilai_angka !== oldKHSDetail!.nilai_angka) {
+            changedData.push({ old: oldKHSDetail, new: newKHSDetail });
+            changed = true;
         }
-    } else {
-        fs.writeFileSync("data/transcript.html", response!.data, "utf8");
-        return;
     }
 
-    if (changed) fs.writeFileSync("data/transcript.html", response!.data, "utf8");
+    if (changed) {
+        // things to handle when changed.
+        fs.writeFileSync("data/khs.html", response!.data.html, "utf8");
+
+        for (const data of changedData) {
+            sendWithDiscordWebhook({
+                embeds: [
+                    {
+                        title: `${data.old.matakuliah}`,
+                        fields: [
+                            {
+                                name: "Nilai",
+                                value: `${data.old!.nilai_angka || 0} -> ${data.new!.nilai_angka}`,
+                            },
+                        ],
+                    },
+                ],
+            });
+        }
+    }
 }
 
 // run at the beginning
-await saveTranscript();
+await saveKHS();
 cron.schedule("*/30 6-23 * * *", async () => {
     console.log(`[${new Date().toLocaleString()}] Running CRON job.`);
-    await saveTranscript();
+    await saveKHS();
 });
 
 createHttpServer();
