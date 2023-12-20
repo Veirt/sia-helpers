@@ -5,5 +5,5 @@ cookie.txt
 dist/
 data/*
 !data/.gitkeep
-docker-compose-dev.yml
+docker-compose.dev.yml
 deploy-local.sh
