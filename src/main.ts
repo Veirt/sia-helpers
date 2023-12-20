@@ -120,7 +120,7 @@ async function saveKHS() {
 
     const khsExist = fs.existsSync("data/khs.html");
     if (!khsExist) {
-        fs.writeFileSync("data/khs.html", response!.data, "utf8");
+        fs.writeFileSync("data/khs.html", response!.data.html, "utf8");
         return;
     }
 
