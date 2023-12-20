@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        SIA Unmul Userscript
 // @namespace   Violentmonkey Scripts
-// @match       *://sia.unmul.ac.id/*
+// @match       *://sia-arsip.unmul.ac.id/*
 // @match       *://ais.unmul.ac.id/*
 // @grant       none
 // @version     1.0.1
@@ -63,7 +63,7 @@ function loginCapthaSolver() {
   let input;
   if (host.startsWith("sia") && path === "/login") {
     captcha = document.querySelector(
-      "body > div > div > div > div > div > form > div:nth-child(3) > div"
+      "body > div > div > div > div > div > form > div:nth-child(3) > div",
     ).innerText;
     input = document.querySelector("input[name='sc']");
     input.removeAttribute("id"); // might interfere with bitwarden auto-fill if not removed
@@ -135,9 +135,8 @@ function modifyTranscriptTable(_changes, observer) {
     const [nip, ...date] = transcript.keterangan.split(" ");
     if (nip !== "" && LECTURER[nip] !== undefined) {
       const keteranganIdx = path === "/pmhskhs" ? 11 : 10;
-      transcriptRow.children[
-        keteranganIdx
-      ].innerHTML = `${LECTURER[nip]}<br/>${date}`;
+      transcriptRow.children[keteranganIdx].innerHTML =
+        `${LECTURER[nip]}<br/>${date}`;
     }
   }
 }
@@ -150,7 +149,7 @@ function getRandomInt(min, max) {
 
 function fillQuestionnaire() {
   const questionnaireRows = document.querySelectorAll(
-    ".tab-pane.active > table > tbody > tr"
+    ".tab-pane.active > table > tbody > tr",
   );
 
   for (const row of questionnaireRows) {
@@ -162,7 +161,7 @@ function fillQuestionnaire() {
 
 function tdQuestionnaireOnClick() {
   const answerTd = document.querySelectorAll(
-    ".tab-pane.active > table > tbody > tr > td"
+    ".tab-pane.active > table > tbody > tr > td",
   );
 
   for (const td of answerTd) {
@@ -186,6 +185,9 @@ function tdQuestionnaireOnClick() {
     });
   }
 
+  const backButton = document.querySelector(".btn.btn-danger-gradien.btn-lg");
+  backButton.href = document.referrer;
+
   if (path.startsWith("/pmhskhs/kuisioner")) {
     tdQuestionnaireOnClick();
     document.addEventListener(
@@ -195,7 +197,7 @@ function tdQuestionnaireOnClick() {
           fillQuestionnaire();
         }
       },
-      false
+      false,
     );
   }
 })();
