@@ -14,14 +14,26 @@ const LOGIN_POST_URL = "https://ais.unmul.ac.id/login/check";
 const KHS_URL = "https://ais.unmul.ac.id/mahasiswa/khs";
 const KHS_DETAIL_URL = "https://ais.unmul.ac.id/mahasiswa/khs/detail/";
 
-async function sendWithDiscordWebhook(content: object) {
+async function sendWithDiscordWebhook(data: { old: KHS; new: KHS }) {
     const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
     if (DISCORD_WEBHOOK_URL) {
         const config = {
             method: "POST",
             url: DISCORD_WEBHOOK_URL,
             headers: { "Content-Type": "application/json" },
-            data: JSON.stringify(content),
+            data: JSON.stringify({
+                embeds: [
+                    {
+                        title: `${data.old.matakuliah}`,
+                        fields: [
+                            {
+                                name: "Nilai",
+                                value: `${data.old!.nilaiAngka || 0} -> ${data.new!.nilaiAngka}`,
+                            },
+                        ],
+                    },
+                ],
+            }),
         };
 
         try {
@@ -32,11 +44,7 @@ async function sendWithDiscordWebhook(content: object) {
     }
 }
 
-function saveLoginCookie(cookie: string) {
-    fs.writeFileSync("data/cookie.txt", cookie, "utf8");
-}
-
-async function getLoginCookie() {
+async function getLoginCookie(): Promise<string> {
     console.log("Getting login cookie...");
     if (process.env.NIM === undefined || process.env.PASSWORD === undefined) {
         console.error("Please set environment variable NIM and PASSWORD first.");
@@ -68,10 +76,28 @@ async function getLoginCookie() {
         throw new AbortError(`Login failed`);
     }
 
-    saveLoginCookie(ci_session_cookie);
+    fs.writeFileSync("data/cookie.txt", ci_session_cookie, "utf8");
+
+    return ci_session_cookie;
 }
 
-async function fetchKHS(cookie: string) {
+async function fetchKHS() {
+    let cookie;
+    if (fs.existsSync("data/cookie.txt")) {
+        cookie = fs.readFileSync("data/cookie.txt", "utf8").trim();
+    } else {
+        cookie = await pRetry(getLoginCookie, { retries: 3 });
+    }
+
+    // test if cookie is still valid. if not, getLoginCookie again.
+    const khsPage = await axios.get(KHS_URL, {
+        headers: { cookie },
+    });
+    if (khsPage.request._redirectable._redirectCount > 0) {
+        console.log("Cookie is no longer valid.");
+        cookie = await pRetry(getLoginCookie, { retries: 3 });
+    }
+
     try {
         const khsPage = await axios.get(KHS_URL, {
             headers: { cookie },
@@ -92,14 +118,24 @@ async function fetchKHS(cookie: string) {
     }
 }
 
+function checkKhsChanged(oldKHS: KHS[], newKHS: KHS[]): { old: KHS; new: KHS }[] {
+    let changedData: { old: KHS; new: KHS }[] = [];
+
+    for (const newKHSDetail of newKHS) {
+        const oldKHSDetail = oldKHS.find((detail) => newKHSDetail.matakuliah === detail.matakuliah)!;
+
+        if (newKHSDetail.nilaiAngka !== oldKHSDetail!.nilaiAngka) {
+            changedData.push({ old: oldKHSDetail, new: newKHSDetail });
+        }
+    }
+
+    return changedData;
+}
+
 async function saveKHS() {
-    await pRetry(getLoginCookie, { retries: 3 });
-
-    const cookie = fs.readFileSync("data/cookie.txt", "utf8").trim();
-
     let response;
     try {
-        response = await pRetry(() => fetchKHS(cookie), { retries: 3 });
+        response = await pRetry(() => fetchKHS(), { retries: 3 });
         if (!response) {
             throw new Error("Response is empty.");
         }
@@ -117,36 +153,15 @@ async function saveKHS() {
     const newKHS = parseKhs(response!.data.html);
     const oldKHS = parseKhs(fs.readFileSync("data/khs.html", "utf8"));
 
-    let changed = false;
-    let changedData: { old: KHS; new: KHS }[] = [];
-
-    for (const newKHSDetail of newKHS) {
-        const oldKHSDetail = oldKHS.find((detail) => newKHSDetail.matakuliah === detail.matakuliah)!;
-
-        if (newKHSDetail.nilaiAngka !== oldKHSDetail!.nilaiAngka) {
-            changedData.push({ old: oldKHSDetail, new: newKHSDetail });
-            changed = true;
-        }
-    }
-
+    const changedData = checkKhsChanged(oldKHS, newKHS);
+    const changed = changedData.length > 0;
     if (changed) {
         // things to handle when changed.
         fs.writeFileSync("data/khs.html", response!.data.html, "utf8");
 
         for (const data of changedData) {
-            sendWithDiscordWebhook({
-                embeds: [
-                    {
-                        title: `${data.old.matakuliah}`,
-                        fields: [
-                            {
-                                name: "Nilai",
-                                value: `${data.old!.nilaiAngka || 0} -> ${data.new!.nilaiAngka}`,
-                            },
-                        ],
-                    },
-                ],
-            });
+            console.log(`${data.new.matakuliah} has changed.`);
+            sendWithDiscordWebhook(data);
         }
     }
 }
