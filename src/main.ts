@@ -88,15 +88,12 @@ async function fetchKHS(cookie: string) {
 
         return khsDetail;
     } catch (err) {
-        console.error(`Error when fetching transcript: ${err}`);
+        console.error(`Error when fetching khs: ${err}`);
     }
 }
 
 async function saveKHS() {
-    const cookieExist = fs.existsSync("data/cookie.txt");
-    if (!cookieExist) {
-        await pRetry(getLoginCookie, { retries: 3 });
-    }
+    await pRetry(getLoginCookie, { retries: 3 });
 
     const cookie = fs.readFileSync("data/cookie.txt", "utf8").trim();
 
@@ -106,15 +103,8 @@ async function saveKHS() {
         if (!response) {
             throw new Error("Response is empty.");
         }
-
-        if (response.status === 307) {
-            console.log("Getting cookies and retrying request...");
-            await pRetry(getLoginCookie, { retries: 3 });
-
-            response = await fetchKHS(cookie);
-        }
     } catch (err) {
-        console.error(`Failed fetching transcript: ${err}`);
+        console.error(`Failed saving khs: ${err}`);
         return;
     }
 
