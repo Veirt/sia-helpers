@@ -38,15 +38,15 @@ export default function parseKhs(khs: string) {
         }
 
         // if NaN, convert it to 0.
-        let nilaiAngka = parseInt($(row.children[13]).html()!);
+        let nilaiAngka = parseFloat($(row.children[13]).html()!);
         nilaiAngka = isNaN(nilaiAngka) ? 0 : nilaiAngka;
 
         const wp = $(row.children[9]).html()!;
         const sks = parseInt($(row.children[11]).html()!);
 
         const nilaiHuruf = $(row.children[15]).html()!;
-        const bobot = parseInt($(row.children[17]).html()!);
-        const sksxbobot = parseInt($(row.children[19]).html()!);
+        const bobot = parseFloat($(row.children[17]).html()!);
+        const sksxbobot = parseFloat($(row.children[19]).html()!);
 
         data.push({
             no,
