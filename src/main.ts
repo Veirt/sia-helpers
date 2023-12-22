@@ -28,7 +28,7 @@ async function sendWithDiscordWebhook(data: { old: KHS; new: KHS }) {
                         fields: [
                             {
                                 name: "Nilai",
-                                value: `${data.old!.nilaiAngka || 0} -> ${data.new!.nilaiAngka}`,
+                                value: `${data.old!.nilaiAngka} -> ${data.new!.nilaiAngka}`,
                             },
                         ],
                     },
