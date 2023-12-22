@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <title>KHS</title>
+
+    <style>
+      td {
+        padding: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      hx-trigger="load"
+      hx-get="/api/khs"
+      hx-headers='{"Accept": "text/html"}'
+      hx-target="table"
+      hx-swap="beforeend"
+    >
+      <table border="1">
+        <tr>
+          <td>No</td>
+          <td>Class</td>
+          <td>Course</td>
+          <td>Lecturer(s)</td>
+          <td>W/P</td>
+          <td>SKS</td>
+          <td>Score (Number)</td>
+          <td>Score (Predicate)</td>
+          <td>Bobot</td>
+          <td>SKS * Bobot</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>
