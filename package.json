@@ -23,5 +23,6 @@
     "start": "node dist/main",
     "dev": "tsc && node dist/main",
     "build": "tsc"
-  }
+  },
+  "packageManager": "yarn@4.0.2"
 }
