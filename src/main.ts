@@ -168,10 +168,18 @@ async function saveKHS() {
 
 // run at the beginning
 await saveKHS();
+
 cron.schedule("*/30 6-23 * * *", async () => {
-    let [date, time] = new Date().toISOString().split("T");
-    time = time.split(".")[0];
-    console.log(`[${date} ${time}] Running CRON job.`);
+    const datetime = new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+    }).format(new Date());
+    console.log(`[${datetime}] Running CRON job.`);
+
     await saveKHS();
 });
 
