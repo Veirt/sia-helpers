@@ -2,9 +2,10 @@ FROM node:21-slim as builder
 
 WORKDIR /usr/src/app
 
-COPY package.json yarn.lock ./
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY .yarn ./.yarn
 
-RUN yarn install --frozen-lockfile
+RUN yarn install --immutable
 
 COPY . .
 
@@ -15,9 +16,10 @@ FROM node:21-slim
 
 WORKDIR /app
 
-COPY package.json yarn.lock ./
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY .yarn ./.yarn
 
-RUN yarn install --production --frozen-lockfile && yarn cache clean
+RUN yarn workspaces focus --all --production && yarn cache clean
 
 COPY --from=builder /usr/src/app/dist ./dist
 COPY ./views ./views
