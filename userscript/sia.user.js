@@ -9,8 +9,6 @@
 // @description 12/17/2022, 7:59:02 PM
 // ==/UserScript==
 
-"use strict";
-
 const MY_CLASS = "Kelas B 2022";
 
 const path = window.location.pathname;
@@ -56,25 +54,18 @@ const semesterColor = {
     7: "MediumSeaGreen",
 };
 
-function loginCaptchaSolver() {
-    let captcha = document.querySelector(".badge").innerText;
-    let input = document.querySelector("input[name='login[sc]']");
-
-    if (input) input.value = captcha;
-}
-
 /*
   DEPRECATED.
 */
 function siaLoginCaptchaSolver() {
-    const path = window.location.pathname;
-    if (host.startsWith("sia") && path === "/login") {
-        let captcha = document.querySelector(
-            "body > div > div > div > div > div > form > div:nth-child(3) > div",
-        ).innerText;
-        let input = document.querySelector("input[name='sc']");
+    let captcha = document.querySelector(
+        "body > div > div > div > div > div > form > div:nth-child(3) > div",
+    ).innerText;
+
+    let input = document.querySelector("input[name='sc']");
+    if (input) {
         input.removeAttribute("id"); // might interfere with bitwarden auto-fill if not removed
-        if (input) input.value = captcha;
+        input.value = captcha;
     }
 }
 
@@ -142,12 +133,25 @@ function siaModifyTranscriptTable(_changes, observer) {
     }
 }
 
+function siaFillQuestionnaire() {
+    const questionnaireRows = document.querySelectorAll(".tab-pane.active > table > tbody > tr");
+
+    for (const row of questionnaireRows) {
+        const random = getRandomInt(3, 6);
+        const checkbox = row.children[random + 1].children[0];
+        checkbox.checked = true;
+    }
+}
+
 function getRandomInt(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
 }
 
+/*
+   Fill questionnaire automatically with the keybind <Alt>-q
+*/
 function fillQuestionnaire() {
     const radioForms = document.querySelectorAll(".col-sm-4 > .radio-form");
 
@@ -161,14 +165,38 @@ function fillQuestionnaire() {
     }
 }
 
-function siaFillQuestionnaire() {
-    const questionnaireRows = document.querySelectorAll(".tab-pane.active > table > tbody > tr");
+/*
+   Fill CAPTCHA automatically. (AIS)
+*/
+function loginCaptchaSolver() {
+    let captcha = document.querySelector(".badge").innerText;
+    let input = document.querySelector("input[name='login[sc]']");
 
-    for (const row of questionnaireRows) {
-        const random = getRandomInt(3, 6);
-        const checkbox = row.children[random + 1].children[0];
-        checkbox.checked = true;
+    if (input) input.value = captcha;
+}
+
+/*
+  When 404, back to referrer instead of home page.
+*/
+function backToReferrer() {
+    // benerin back button
+    const backButton = document.querySelector(".btn.btn-danger-gradien.btn-lg");
+    if (backButton) {
+        backButton.href = document.referrer;
+        backButton.innerHTML = "BACK TO LAST PAGE";
     }
+}
+
+/*
+  Properly redirect when cookie is still valid. (AIS)
+*/
+function redirectIfLoggedIn() {
+    const AIS_HOME_URL = "https://ais.unmul.ac.id/mahasiswa/home";
+    fetch(AIS_HOME_URL, { redirect: "error" })
+        .then((_) => (window.location = AIS_HOME_URL))
+        .catch((_err) => {
+            console.error("Not logged in.");
+        });
 }
 
 (function () {
@@ -176,7 +204,7 @@ function siaFillQuestionnaire() {
 
     // SIA
     if (host.startsWith("sia")) {
-        siaLoginCaptchaSolver();
+        if (path === "/login") siaLoginCaptchaSolver();
         siaHighlightMyClass();
 
         // transkrip
@@ -200,19 +228,16 @@ function siaFillQuestionnaire() {
     // AIS
     if (host.startsWith("ais")) {
         if (path === "/") {
+            redirectIfLoggedIn();
             loginCaptchaSolver();
         }
 
-        // benerin back button
-        const backButton = document.querySelector(".btn.btn-danger-gradien.btn-lg");
-        if (backButton) backButton.href = document.referrer;
+        backToReferrer();
 
         // auto fill kuisioner
         if (path.startsWith("/mahasiswa/khs")) {
             document.addEventListener("keydown", (e) => {
-                if (e.key.toLowerCase() === "q" && e.altKey) {
-                    fillQuestionnaire();
-                }
+                if (e.key.toLowerCase() === "q" && e.altKey) fillQuestionnaire();
             });
         }
     }
