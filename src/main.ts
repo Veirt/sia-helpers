@@ -30,6 +30,18 @@ async function sendWithDiscordWebhook(data: { old: KHS; new: KHS }) {
                                 name: "Nilai",
                                 value: `${data.old!.nilaiAngka} -> ${data.new!.nilaiAngka}`,
                             },
+                            {
+                                name: "Predikat",
+                                value: `${data.new!.nilaiHuruf}`,
+                            },
+                            {
+                                name: "Bobot",
+                                value: `${data.new!.bobot}`,
+                            },
+                            {
+                                name: "SKS x Bobot",
+                                value: `${data.new!.sksxbobot}`,
+                            },
                         ],
                     },
                 ],
