@@ -13,7 +13,6 @@ const MY_CLASS = "Kelas B 2022";
 
 const path = window.location.pathname;
 const host = window.location.host;
-console.log(path);
 
 const LECTURER = {
     "196909261994121002": "Dr. H. Fahrul Agus, S.Si, MT",
@@ -150,7 +149,7 @@ function getRandomInt(min, max) {
 }
 
 /*
-   Fill questionnaire automatically with the keybind <Alt>-q
+   Fill questionnaire automatically with the keybind <Alt>-q (AIS)
 */
 function fillQuestionnaire() {
     const radioForms = document.querySelectorAll(".col-sm-4 > .radio-form");
@@ -176,7 +175,7 @@ function loginCaptchaSolver() {
 }
 
 /*
-  When 404, back to referrer instead of home page.
+  When 404, back to referrer instead of home page. (AIS)
 */
 function backToReferrer() {
     // benerin back button
@@ -197,6 +196,17 @@ function redirectIfLoggedIn() {
         .catch((_err) => {
             console.error("Not logged in.");
         });
+}
+
+/*
+   Make the login page a little bit more responsive. (AIS)
+*/
+function responsiveLoginPage() {
+    const divWrapper = document.querySelector(".login-card > div:nth-child(1)");
+    if (divWrapper) divWrapper.style = "width: 450px";
+
+    const div = document.querySelector(".login-card > div:nth-child(1) > div:nth-child(2)");
+    if (div) div.removeAttribute("style");
 }
 
 (function () {
@@ -227,8 +237,9 @@ function redirectIfLoggedIn() {
 
     // AIS
     if (host.startsWith("ais")) {
-        if (path === "/") {
+        if (path === "/" || path === "/index.php/login") {
             redirectIfLoggedIn();
+            responsiveLoginPage();
             loginCaptchaSolver();
         }
 
