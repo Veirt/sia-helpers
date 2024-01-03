@@ -1,6 +1,6 @@
 import express from "express";
 import fs from "fs";
-import parseKhs from "./parseKhs.js";
+import parseKhs from "./lib/parseKhs.js";
 
 const PORT = 8080;
 
@@ -40,3 +40,5 @@ export function createHttpServer() {
     app.listen(PORT);
     console.log(`Listening on http://localhost:${PORT}`);
 }
+
+createHttpServer();

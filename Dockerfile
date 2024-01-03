@@ -24,4 +24,4 @@ RUN yarn workspaces focus --all --production && yarn cache clean
 COPY --from=builder /usr/src/app/dist ./dist
 COPY ./views ./views
 
-CMD ["yarn", "start"]
+CMD ["yarn", "start:all"]

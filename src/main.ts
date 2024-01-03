@@ -2,10 +2,8 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import dotenv from "dotenv";
 import fs from "fs";
-import * as cron from "node-cron";
 import pRetry, { AbortError } from "p-retry";
-import parseKhs, { KHS } from "./parseKhs.js";
-import { createHttpServer } from "./server.js";
+import parseKhs, { KHS } from "./lib/parseKhs.js";
 
 dotenv.config();
 
@@ -144,7 +142,7 @@ function checkKhsChanged(oldKHS: KHS[], newKHS: KHS[]): { old: KHS; new: KHS }[]
     return changedData;
 }
 
-async function saveKHS() {
+export async function saveKHS() {
     let response;
     try {
         response = await pRetry(() => fetchKHS(), { retries: 3 });
@@ -177,22 +175,3 @@ async function saveKHS() {
         }
     }
 }
-
-// run at the beginning
-await saveKHS();
-
-cron.schedule("*/30 6-23 * * *", async () => {
-    const datetime = new Intl.DateTimeFormat("en-US", {
-        month: "short",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-    }).format(new Date());
-    console.log(`[${datetime}] Running CRON job.`);
-
-    await saveKHS();
-});
-
-createHttpServer();
