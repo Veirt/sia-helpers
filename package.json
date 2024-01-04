@@ -25,6 +25,7 @@
     "start:run": "node dist/run",
     "start:server": "node dist/server",
     "start:cron": "node dist/cron",
+    "dev": "yarn build && yarn start:all",
     "build": "tsc"
   },
   "packageManager": "yarn@4.0.2"
