@@ -32,7 +32,7 @@ export default function parseKhs(khs: string) {
 
         // get list dosen
         const dosen = [];
-        const $dosen = cheerio.load($(row.children[7]).html()!.split("<br>")[1]);
+        const $dosen = cheerio.load($(row.children[7]).html()!);
         for (const prof of $dosen(".badge.badge-primary")) {
             dosen.push($(prof).html()!.trim());
         }
