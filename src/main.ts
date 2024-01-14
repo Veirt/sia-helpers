@@ -12,6 +12,8 @@ const LOGIN_POST_URL = "https://ais.unmul.ac.id/login/check";
 const KHS_URL = "https://ais.unmul.ac.id/mahasiswa/khs";
 const KHS_DETAIL_URL = "https://ais.unmul.ac.id/mahasiswa/khs/detail/";
 
+const CURRENT_SEMESTER = process.env.CURRENT_SEMESTER || "2023/2024 Ganjil";
+
 async function sendWithDiscordWebhook(data: { old: KHS; new: KHS }) {
     const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
     if (DISCORD_WEBHOOK_URL) {
@@ -115,8 +117,18 @@ async function fetchKHS() {
 
         const $ = cheerio.load(khsPage.data);
 
-        // last child: newest, as of now. fix later if there is a new page
-        const key = $(".inbox-data.lihat:last-child").attr("data-key");
+        const khsList = $(".inbox-data.lihat");
+        let idx;
+        for (let i = 0; i < khsList.length; i++) {
+            const $khs = cheerio.load(khsList[i]);
+            const semester = $khs(".inbox-message > .email-data > span").text();
+            if (semester === CURRENT_SEMESTER) {
+                idx = i;
+                break;
+            }
+        }
+
+        const key = $(khsList[idx!]).attr("data-key");
 
         const khsDetail = await axios.get(`${KHS_DETAIL_URL}/${key}`, {
             headers: { cookie },
