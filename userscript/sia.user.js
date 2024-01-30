@@ -3,8 +3,9 @@
 // @namespace   Violentmonkey Scripts
 // @match       *://sia-arsip.unmul.ac.id/*
 // @match       *://ais.unmul.ac.id/*
+// @match       *://star.unmul.ac.id/*
 // @grant       none
-// @version     1.0.1
+// @version     1.0.2
 // @author      Veirt
 // @description 12/17/2022, 7:59:02 PM
 // ==/UserScript==
@@ -250,6 +251,12 @@ function responsiveLoginPage() {
             document.addEventListener("keydown", (e) => {
                 if (e.key.toLowerCase() === "q" && e.altKey) fillQuestionnaire();
             });
+        }
+    }
+
+    if (host.startsWith("star")) {
+        if (path === "/login") {
+            loginCaptchaSolver();
         }
     }
 })();
