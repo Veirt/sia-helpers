@@ -210,9 +210,63 @@ function responsiveLoginPage() {
     if (div) div.removeAttribute("style");
 }
 
-(function () {
-    "use strict";
+function fixStarAbsenceOnDesktop() {
+    window.isMobileDevice = function () {
+        return true;
+    };
 
+    // navigator.geolocation.getCurrentPosition() is so slow in firefox
+    const FIVE_MINUTES = 30000;
+
+    // defualt coordinates for campus
+    let coords = {
+        latitude: 0.4671397,
+        longitude: 117.1573591,
+    };
+    navigator.geolocation.getCurrentPosition(
+        function (position) {
+            coords.latitude = position.coords.latitude;
+            coords.longitude = position.coords.longitude;
+        },
+        null,
+        { enableHighAccuracy: false, maximumAge: FIVE_MINUTES },
+    );
+
+    let observerEnabled = true; // Flag to indicate if the observer logic should be executed
+
+    const observer = new MutationObserver((_mutations) => {
+        if (document.querySelector("#absenForm") && observerEnabled) {
+            const latitudeInput = document.getElementById("latitude");
+            const longitudeInput = document.getElementById("longitude");
+
+            if (latitudeInput) {
+                latitudeInput.type = "input";
+                latitudeInput.value = coords.latitude;
+            }
+
+            if (longitudeInput) {
+                longitudeInput.type = "input";
+                longitudeInput.value = coords.longitude;
+            }
+
+            webcamInit("#cameraFeed");
+            closeCamera();
+            resetCamera();
+
+            observerEnabled = false; // Disable observer logic after execution
+        } else {
+            observerEnabled = true; // Re-enable observer when #absenForm disappears
+        }
+    });
+
+    // If you get "parameter 1 is not of type 'Node'" error, see https://stackoverflow.com/a/77855838/492336
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+    });
+}
+
+(function () {
     // SIA
     if (host.startsWith("sia")) {
         if (path === "/login") siaLoginCaptchaSolver();
@@ -257,6 +311,8 @@ function responsiveLoginPage() {
     if (host.startsWith("star")) {
         if (path === "/login") {
             loginCaptchaSolver();
+        } else if (path === "/mahasiswa/kelas") {
+            fixStarAbsenceOnDesktop();
         }
     }
 })();
