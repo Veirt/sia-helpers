@@ -90,9 +90,9 @@ function fixStarAbsenceOnDesktop() {
     const FIVE_MINUTES = 30000;
 
     // defualt coordinates for campus
-    let coords = {
-        latitude: 0.4671397,
-        longitude: 117.1573591,
+    const coords = {
+        latitude: -0.4671397 + (Math.random() % 0.00001),
+        longitude: 117.1573591 + (Math.random() % 0.00001),
     };
     navigator.geolocation.getCurrentPosition(
         function (position) {
