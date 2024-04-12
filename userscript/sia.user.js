@@ -4,12 +4,10 @@
 // @match       *://ais.unmul.ac.id/*
 // @match       *://star.unmul.ac.id/*
 // @grant       none
-// @version     1.0.4
+// @version     1.0.5
 // @author      Veirt
 // @description 12/17/2022, 7:59:02 PM
 // ==/UserScript==
-
-const MY_CLASS = "Kelas B 2022";
 
 const path = window.location.pathname;
 const host = window.location.host;
@@ -37,7 +35,7 @@ function fillQuestionnaire() {
 }
 
 /*
-   Fill CAPTCHA automatically. (AIS)
+   Fill CAPTCHA automatically. (AIS/STAR)
 */
 function loginCaptchaSolver() {
     let captcha = document.querySelector(".badge").innerText;
@@ -70,41 +68,19 @@ function redirectIfLoggedIn() {
         });
 }
 
-/*
-   Make the login page a little bit more responsive. (AIS)
-*/
-function responsiveLoginPage() {
-    const divWrapper = document.querySelector(".login-card > div:nth-child(1)");
-    if (divWrapper) divWrapper.style = "width: 450px";
-
-    const div = document.querySelector(".login-card > div:nth-child(1) > div:nth-child(2)");
-    if (div) div.removeAttribute("style");
-}
-
 function fixStarAbsenceOnDesktop() {
     window.isMobileDevice = function () {
         return true;
     };
 
     // navigator.geolocation.getCurrentPosition() is so slow in firefox
-    const FIVE_MINUTES = 30000;
-
     // defualt coordinates for campus
     const coords = {
         latitude: -0.4671397 + (Math.random() % 0.00001),
         longitude: 117.1573591 + (Math.random() % 0.00001),
     };
-    navigator.geolocation.getCurrentPosition(
-        function (position) {
-            coords.latitude = position.coords.latitude;
-            coords.longitude = position.coords.longitude;
-        },
-        null,
-        { enableHighAccuracy: false, maximumAge: FIVE_MINUTES },
-    );
 
     let observerEnabled = true; // Flag to indicate if the observer logic should be executed
-
     const observer = new MutationObserver((_mutations) => {
         if (document.querySelector("#absenForm") && observerEnabled) {
             const latitudeInput = document.getElementById("latitude");
@@ -113,11 +89,13 @@ function fixStarAbsenceOnDesktop() {
             if (latitudeInput) {
                 latitudeInput.type = "input";
                 latitudeInput.value = coords.latitude;
+                latitudeInput.style = "margin: 10px 0";
             }
 
             if (longitudeInput) {
                 longitudeInput.type = "input";
                 longitudeInput.value = coords.longitude;
+                longitudeInput.style = "margin: 10px 0";
             }
 
             webcamInit("#cameraFeed");
@@ -137,31 +115,34 @@ function fixStarAbsenceOnDesktop() {
     });
 }
 
-(function () {
-    // AIS
-    if (host.startsWith("ais")) {
-        if (path === "/" || path === "/index.php/login") {
+// AIS
+if (host.startsWith("ais")) {
+    switch (path) {
+        case "/":
+        case "/index.php/login":
             redirectIfLoggedIn();
-            responsiveLoginPage();
             loginCaptchaSolver();
-        }
+            break;
 
-        backToReferrer();
-
-        // auto fill kuisioner
-        if (path.startsWith("/mahasiswa/khs")) {
+        case "/mahasiswa/khs":
+            // auto fill kuisioner
             document.addEventListener("keydown", (e) => {
                 if (e.key.toLowerCase() === "q" && e.altKey) fillQuestionnaire();
             });
-        }
+            break;
     }
 
-    // STAR
-    if (host.startsWith("star")) {
-        if (path === "/login") {
+    backToReferrer();
+}
+
+// STAR
+if (host.startsWith("star")) {
+    switch (path) {
+        case "/login":
             loginCaptchaSolver();
-        } else if (path === "/mahasiswa/kelas") {
+            break;
+        case "/mahasiswa/kelas":
             fixStarAbsenceOnDesktop();
-        }
+            break;
     }
-})();
+}
