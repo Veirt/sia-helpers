@@ -1,4 +1,4 @@
-FROM node:21-slim as builder
+FROM node:22-alpine as builder
 
 WORKDIR /usr/src/app
 
@@ -12,7 +12,7 @@ COPY . .
 RUN yarn build
 
 
-FROM node:21-slim
+FROM node:22-alpine
 
 WORKDIR /app
 
