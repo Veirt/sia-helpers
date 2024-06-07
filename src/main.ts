@@ -12,7 +12,7 @@ const LOGIN_POST_URL = "https://ais.unmul.ac.id/login/check";
 const KHS_URL = "https://ais.unmul.ac.id/mahasiswa/khs";
 const KHS_DETAIL_URL = "https://ais.unmul.ac.id/mahasiswa/khs/detail/";
 
-const CURRENT_SEMESTER = process.env.CURRENT_SEMESTER || "2023/2024 Ganjil";
+const CURRENT_SEMESTER = process.env.CURRENT_SEMESTER || "2023/2024 Genap";
 
 async function sendWithDiscordWebhook(data: { old: KHS; new: KHS }) {
     const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
@@ -48,6 +48,33 @@ async function sendWithDiscordWebhook(data: { old: KHS; new: KHS }) {
             }),
         };
 
+        try {
+            await axios(config);
+        } catch (err) {
+            console.error(`Error when sending webhook: ${err}`);
+        }
+    }
+}
+
+async function sendWithWhatsappWebhook(data: { old: KHS; new: KHS }) {
+    const WHATSAPP_WEBHOOK_URL = process.env.WHATSAPP_WEBHOOK_URL;
+
+    const message = `*${data.old.matakuliah}*
+
+Nilai: ${data.old!.nilaiAngka} -> ${data.new!.nilaiAngka}
+Predikat: ${data.new!.nilaiHuruf}
+Bobot: ${data.new!.bobot}
+SKS x Bobot: ${data.new!.sksxbobot}`;
+
+    if (WHATSAPP_WEBHOOK_URL) {
+        const config = {
+            method: "POST",
+            url: WHATSAPP_WEBHOOK_URL,
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            data: { message },
+        };
         try {
             await axios(config);
         } catch (err) {
@@ -183,7 +210,7 @@ export async function saveKHS() {
 
         for (const data of changedData) {
             console.log(`${data.new.matakuliah} has changed.`);
-            sendWithDiscordWebhook(data);
+            sendWithWhatsappWebhook(data);
         }
     }
 }
