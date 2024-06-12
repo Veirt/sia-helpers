@@ -1,7 +1,7 @@
 import * as cron from "node-cron";
 import { saveKHS } from "./main.js";
 
-const expression = "*/30 6-23 * * *";
+const expression = "*/30 * * * *";
 console.log(`Scheduling CRON: ${expression}`);
 
 cron.schedule(expression, async () => {
