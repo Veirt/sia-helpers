@@ -209,8 +209,18 @@ export async function saveKHS() {
         fs.writeFileSync("data/khs.html", response!.data.html, "utf8");
 
         for (const data of changedData) {
-            console.log(`${data.new.matakuliah} has changed.`);
+            const datetime = new Intl.DateTimeFormat("en-US", {
+                month: "short",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+            }).format(new Date());
+
+            console.log(`[${datetime}] ${data.new.matakuliah} has changed.`);
             sendWithWhatsappWebhook(data);
+            sendWithDiscordWebhook(data);
         }
     }
 }
