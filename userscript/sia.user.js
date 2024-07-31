@@ -4,11 +4,15 @@
 // @match       *://ais.unmul.ac.id/*
 // @match       *://star.unmul.ac.id/*
 // @grant       none
-// @version     1.0.5
-// @author      Veirt
-// @description 12/17/2022, 7:59:02 PM
+// @version     1.0.6
+// @author      Miez & Veirt
+// @description 07/31/2024, 11:16:02 AM
 // ==/UserScript==
 
+
+const NIM = ""; // isi pake nim sendiri
+const PASSWORD = ""; //isi password sendiri
+//aman kok.
 const path = window.location.pathname;
 const host = window.location.host;
 
@@ -17,6 +21,32 @@ function getRandomInt(min, max) {
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
 }
+
+
+
+function otomatis_login() {
+    const tombol_submit = document.querySelector('#form-sign');
+    const txtusername = document.querySelector('input[name="login[username]"]');
+    const txtpwd = document.querySelector('input[name="login[password]"]');
+
+    if (txtusername && txtpwd) {
+        txtusername.value = NIM;
+        txtpwd.value = PASSWORD;
+    }
+
+    setTimeout(() => {
+        const captchaInput = document.querySelector('input[name="login[sc]"]');
+        if (captchaInput && captchaInput.value) {
+            tombol_submit.submit();
+        } else {
+            console.log("masalah di captcha.");
+        }
+    }, 500);
+
+}
+
+
+
 
 /*
    Fill questionnaire automatically with the keybind <Alt>-q (AIS)
@@ -66,6 +96,19 @@ function redirectIfLoggedIn() {
         .catch((_err) => {
             console.error("Not logged in.");
         });
+}
+
+
+function handlerRedirect_setelahLogin() {
+    if (host.startsWith("ais")) {
+        if (path === "/login/check") {
+            window.location.href = "https://ais.unmul.ac.id/mahasiswa/home";
+        }
+    } else if (host.startsWith("star")) {
+        if (path === "/login/check") {
+            window.location.href = "https://star.unmul.ac.id/mahasiswa/home";
+        }
+    }
 }
 
 function fixStarAbsenceOnDesktop() {
@@ -121,6 +164,7 @@ if (host.startsWith("ais")) {
         case "/":
         case "/index.php/login":
             redirectIfLoggedIn();
+            otomatis_login();
             loginCaptchaSolver();
             break;
 
@@ -129,6 +173,9 @@ if (host.startsWith("ais")) {
             document.addEventListener("keydown", (e) => {
                 if (e.key.toLowerCase() === "q" && e.altKey) fillQuestionnaire();
             });
+            break;
+        case "/login/check":
+            handlerRedirect_setelahLogin();
             break;
     }
 
@@ -139,10 +186,14 @@ if (host.startsWith("ais")) {
 if (host.startsWith("star")) {
     switch (path) {
         case "/login":
+            otomatis_login();
             loginCaptchaSolver();
             break;
         case "/mahasiswa/kelas":
             fixStarAbsenceOnDesktop();
+            break;
+        case "/login/check":
+            handlerRedirect_setelahLogin();
             break;
     }
 }
