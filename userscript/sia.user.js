@@ -9,10 +9,10 @@
 // @description 07/31/2024, 11:16:02 AM
 // ==/UserScript==
 
-
 const NIM = ""; // isi pake nim sendiri
-const PASSWORD = ""; //isi password sendiri
+const PASSWORD = ""; // isi password sendiri
 //aman kok.
+
 const path = window.location.pathname;
 const host = window.location.host;
 
@@ -22,31 +22,48 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
 }
 
-
-
-function otomatis_login() {
-    const tombol_submit = document.querySelector('#form-sign');
-    const txtusername = document.querySelector('input[name="login[username]"]');
-    const txtpwd = document.querySelector('input[name="login[password]"]');
-
-    if (txtusername && txtpwd) {
-        txtusername.value = NIM;
-        txtpwd.value = PASSWORD;
+/*
+   Automatically log in when the variable NIM and PASSWORD is being set (AIS/STAR)
+*/
+function loginAutomatically() {
+    if (!NIM && !PASSWORD) {
+        return;
     }
 
-    setTimeout(() => {
-        const captchaInput = document.querySelector('input[name="login[sc]"]');
-        if (captchaInput && captchaInput.value) {
-            tombol_submit.submit();
-        } else {
-            console.log("masalah di captcha.");
-        }
-    }, 500);
+    const form = document.querySelector("#form-sign");
+    const submitButton = document.querySelector("button[type='submit']");
+    const usernameInput = document.querySelector('input[name="login[username]"]');
+    const passwordInput = document.querySelector('input[name="login[password]"]');
 
+    if (usernameInput && passwordInput) {
+        usernameInput.value = NIM;
+        passwordInput.value = PASSWORD;
+    }
+
+    // disable the built-in submit handler
+    $("#form-sign").off();
+
+    form.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        fetch(form.action, {
+            method: "POST",
+            body: formData,
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                if (!data.status) {
+                    swal("Gagal Login!.", data.message, "error");
+                    return;
+                }
+
+                window.location.href = data.redirect;
+            });
+    });
+
+    submitButton.click();
 }
-
-
-
 
 /*
    Fill questionnaire automatically with the keybind <Alt>-q (AIS)
@@ -91,24 +108,16 @@ function backToReferrer() {
 */
 function redirectIfLoggedIn() {
     const AIS_HOME_URL = "https://ais.unmul.ac.id/mahasiswa/home";
-    fetch(AIS_HOME_URL, { redirect: "error" })
-        .then((_) => (window.location = AIS_HOME_URL))
-        .catch((_err) => {
-            console.error("Not logged in.");
-        });
-}
-
-
-function handlerRedirect_setelahLogin() {
-    if (host.startsWith("ais")) {
-        if (path === "/login/check") {
-            window.location.href = "https://ais.unmul.ac.id/mahasiswa/home";
-        }
-    } else if (host.startsWith("star")) {
-        if (path === "/login/check") {
-            window.location.href = "https://star.unmul.ac.id/mahasiswa/home";
-        }
-    }
+    return new Promise((resolve, reject) => {
+        fetch(AIS_HOME_URL, { redirect: "error" })
+            .then((_) => {
+                window.location = AIS_HOME_URL;
+                return resolve();
+            })
+            .catch((_err) => {
+                return reject("Not logged in.");
+            });
+    });
 }
 
 function fixStarAbsenceOnDesktop() {
@@ -163,19 +172,16 @@ if (host.startsWith("ais")) {
     switch (path) {
         case "/":
         case "/index.php/login":
-            redirectIfLoggedIn();
-            otomatis_login();
-            loginCaptchaSolver();
+            redirectIfLoggedIn().catch((_) => {
+                loginCaptchaSolver();
+                loginAutomatically();
+            });
             break;
 
         case "/mahasiswa/khs":
-            // auto fill kuisioner
             document.addEventListener("keydown", (e) => {
                 if (e.key.toLowerCase() === "q" && e.altKey) fillQuestionnaire();
             });
-            break;
-        case "/login/check":
-            handlerRedirect_setelahLogin();
             break;
     }
 
@@ -186,14 +192,11 @@ if (host.startsWith("ais")) {
 if (host.startsWith("star")) {
     switch (path) {
         case "/login":
-            otomatis_login();
             loginCaptchaSolver();
+            loginAutomatically();
             break;
         case "/mahasiswa/kelas":
             fixStarAbsenceOnDesktop();
-            break;
-        case "/login/check":
-            handlerRedirect_setelahLogin();
             break;
     }
 }
