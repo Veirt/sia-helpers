@@ -1,27 +1,19 @@
-FROM node:22-alpine as builder
+FROM golang:alpine AS builder
 
-WORKDIR /usr/src/app
-
-COPY package.json yarn.lock .yarnrc.yml ./
-COPY .yarn ./.yarn
-
-RUN yarn install --immutable
-
-COPY . .
-
-RUN yarn build
-
-
-FROM node:22-alpine
+RUN apk add --no-cache ca-certificates
 
 WORKDIR /app
 
-COPY package.json yarn.lock .yarnrc.yml ./
-COPY .yarn ./.yarn
+COPY go.mod go.sum ./
+RUN go mod download
 
-RUN yarn workspaces focus --all --production && yarn cache clean
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 
-COPY --from=builder /usr/src/app/dist ./dist
-COPY ./views ./views
+FROM scratch
+WORKDIR /app
+COPY --from=builder /app/main .
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-CMD ["yarn", "start:all"]
+EXPOSE 33125/tcp
+CMD ["./main"]

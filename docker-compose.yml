@@ -1,11 +1,24 @@
 services:
-  app:
+  sia-helpers:
+    container_name: "sia-helpers"
     build: .
-    container_name: "sia-helper"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - NIM=
+      - PASSWORD=
+      - TZ=Asia/Makassar
+    ports: 
+      - 33125:33125
+    restart: unless-stopped
+  khs-monitor:
+    build: ./khs-monitor
+    container_name: "khs-monitor"
     environment:
       - NIM=
       - PASSWORD=
       - DISCORD_WEBHOOK_URL=
+      - CURRENT_SEMESTER=
       - TZ=Asia/Makassar
     volumes:
       - /path/to/data:/app/data

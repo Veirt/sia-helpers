@@ -12,7 +12,12 @@ const LOGIN_POST_URL = "https://ais.unmul.ac.id/login/check";
 const KHS_URL = "https://ais.unmul.ac.id/mahasiswa/khs";
 const KHS_DETAIL_URL = "https://ais.unmul.ac.id/mahasiswa/khs/detail/";
 
-const CURRENT_SEMESTER = process.env.CURRENT_SEMESTER || "2023/2024 Genap";
+const CURRENT_SEMESTER = process.env.CURRENT_SEMESTER;
+
+if (!CURRENT_SEMESTER) {
+    console.error("Please set CURRENT_SEMESTER environment first.");
+    process.exit();
+}
 
 async function sendWithDiscordWebhook(data: { old: KHS; new: KHS }) {
     const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;

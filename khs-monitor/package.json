@@ -21,12 +21,11 @@
     "typescript": "^5.3.3"
   },
   "scripts": {
-    "start:all": "yarn concurrently 'yarn start:run' 'yarn start:cron' 'yarn start:server'",
+    "start:all": "pnpm concurrently 'pnpm run start:run' 'pnpm run start:cron' 'pnpm run start:server'",
     "start:run": "node dist/run",
     "start:server": "node dist/server",
     "start:cron": "node dist/cron",
-    "dev": "yarn build && yarn start:all",
+    "dev": "pnpm run build && pnpm run start:all",
     "build": "tsc"
-  },
-  "packageManager": "yarn@4.0.2"
+  }
 }

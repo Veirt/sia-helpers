@@ -38,7 +38,7 @@ export default function parseKhs(khs: string) {
         }
 
         // if NaN, convert it to 0.
-        let nilaiAngka = parseFloat($(row.children[13]).html()!) || 0;
+        const nilaiAngka = parseFloat($(row.children[13]).html()!) || 0;
 
         const wp = $(row.children[9]).html()!;
         const sks = parseInt($(row.children[11]).html()!) || 0;
