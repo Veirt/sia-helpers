@@ -1,4 +1,4 @@
-package main
+package krs
 
 import (
 	"encoding/json"
@@ -63,7 +63,7 @@ func (km *KRSManager) FetchKRSData(search string) []KRSItem {
 		return nil
 	}
 
-	return extractKrsItems(doc)
+	return extractKRSItems(doc)
 }
 
 func getTrimmedText(sel *goquery.Selection, prefixToRemove, suffixToRemove string) string {
@@ -72,8 +72,8 @@ func getTrimmedText(sel *goquery.Selection, prefixToRemove, suffixToRemove strin
 	return strings.TrimSuffix(text, suffixToRemove)
 }
 
-func extractKrsItems(doc *goquery.Document) []KRSItem {
-	var krsItems []KRSItem
+func extractKRSItems(doc *goquery.Document) []KRSItem {
+	var items []KRSItem
 
 	doc.Find("#paginated-list > li").Each(func(i int, s *goquery.Selection) {
 		item := KRSItem{
@@ -97,8 +97,8 @@ func extractKrsItems(doc *goquery.Document) []KRSItem {
 			}
 		})
 
-		krsItems = append(krsItems, item)
+		items = append(items, item)
 	})
 
-	return krsItems
+	return items
 }
