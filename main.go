@@ -22,18 +22,19 @@ func main() {
 		log.Fatalln("please set environment variables NIM and PASSWORD first")
 	}
 
+	httpClient := httpclient.GetClient()
 	lm := auth.LoginManager{
-		HttpClient: httpclient.GetClient(),
+		HttpClient: httpClient,
 		Nim:        nim,
 		Password:   password,
 	}
 
 	km := krs.KRSManager{
-		HttpClient: httpclient.GetClient(),
+		HttpClient: httpClient,
 	}
 
 	khsm := khs.KHSManager{
-		HttpClient:      httpclient.GetClient(),
+		HttpClient:      httpClient,
 		TrackedSemester: os.Getenv("CURRENT_SEMESTER"),
 	}
 

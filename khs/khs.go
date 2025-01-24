@@ -7,7 +7,6 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-resty/resty/v2"
-	"github.com/veirt/sia-helpers/internal/httpclient"
 )
 
 const (
@@ -40,7 +39,7 @@ type KHSItem struct {
 }
 
 func (khsm *KHSManager) FetchKHSData() []KHSItem {
-	client := httpclient.GetClient().SetDoNotParseResponse(true)
+	client := khsm.HttpClient.SetDoNotParseResponse(true)
 	resp, err := client.R().Get(khsListURL)
 	if err != nil {
 		log.Printf("failed to fetch KHS: %v", err)

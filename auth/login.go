@@ -10,7 +10,6 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-resty/resty/v2"
-	"github.com/veirt/sia-helpers/internal/httpclient"
 )
 
 const (
@@ -41,7 +40,7 @@ func (lm *LoginManager) ExtractCaptcha(r io.ReadCloser) (string, error) {
 func (lm *LoginManager) CheckSession() (bool, error) {
 	homeURL := "https://ais.unmul.ac.id/mahasiswa/home"
 
-	client := httpclient.GetClient().Clone().SetRedirectPolicy(resty.NoRedirectPolicy())
+	client := lm.HttpClient.Clone().SetRedirectPolicy(resty.NoRedirectPolicy())
 	_, err := client.R().Get(homeURL)
 
 	// If redirected, session is not valid.
@@ -67,8 +66,12 @@ func (lm *LoginManager) RefreshSession() {
 
 func (lm *LoginManager) GetCookie() (string, error) {
 	log.Println("getting login cookie...")
+	u, _ := url.Parse(loginPageURL)
 
-	client := httpclient.GetClient().SetDoNotParseResponse(true)
+	// remove cookies
+	lm.HttpClient.GetClient().Jar.SetCookies(u, nil)
+
+	client := lm.HttpClient.SetDoNotParseResponse(true)
 	resp, err := client.R().Get(loginPageURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch login page: %w", err)
@@ -76,7 +79,6 @@ func (lm *LoginManager) GetCookie() (string, error) {
 
 	defer resp.RawBody().Close()
 
-	u, _ := url.Parse(loginPageURL)
 	t := client.GetClient().Jar.Cookies(u)
 	cookies := t[0].String()
 
@@ -107,6 +109,9 @@ func (lm *LoginManager) GetCookie() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to save cookie to file: %w", err)
 	}
+
+	log.Println("setting cookie...")
+	lm.HttpClient.SetHeader("Cookie", cookies)
 
 	return cookies, nil
 }

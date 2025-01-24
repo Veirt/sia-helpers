@@ -7,7 +7,6 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-resty/resty/v2"
-	"github.com/veirt/sia-helpers/internal/httpclient"
 )
 
 const loadClassURL = "https://ais.unmul.ac.id/mahasiswa/krs/load_kelas"
@@ -44,7 +43,7 @@ func (km *KRSManager) FetchKRSData(search string) []KRSItem {
 		"search":    search,
 	}
 
-	client := httpclient.GetClient().SetDoNotParseResponse(false)
+	client := km.HttpClient.SetDoNotParseResponse(false)
 	resp, err := client.R().SetFormData(formData).Post(loadClassURL)
 	if err != nil {
 		log.Printf("failed to fetch KRS: %v", err)
