@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -55,24 +56,35 @@ func (lm *LoginManager) CheckSession() (bool, error) {
 	return true, nil
 }
 
-func (lm *LoginManager) RefreshSession() {
-	if valid, err := lm.CheckSession(); !valid && err == nil {
-		_, err := lm.GetCookie()
+func (lm *LoginManager) RefreshSession() error {
+	valid, err := lm.CheckSession()
+	if !valid && err == nil {
+		log.Println("session is invalid, refreshing...")
+		cookie, err := lm.GetCookie()
 		if err != nil {
-			log.Println(err)
+			return fmt.Errorf("failed to get cookie: %w", err)
 		}
+
+		// setting cookie
+		err = os.WriteFile("./data/cookie.txt", []byte(cookie), 0644)
+		if err != nil {
+			return fmt.Errorf("failed to write cookie to file: %w", err)
+		}
+		lm.HttpClient.SetHeader("Cookie", cookie)
+
+		return nil
 	}
+
+	return err
+
 }
 
 func (lm *LoginManager) GetCookie() (string, error) {
 	log.Println("getting login cookie...")
 	u, _ := url.Parse(loginPageURL)
 
-	// remove cookies
-	lm.HttpClient.GetClient().Jar.SetCookies(u, nil)
-
-	client := lm.HttpClient.SetDoNotParseResponse(true)
-	resp, err := client.R().Get(loginPageURL)
+	client := resty.New()
+	resp, err := client.R().SetDoNotParseResponse(true).Get(loginPageURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch login page: %w", err)
 	}
@@ -80,7 +92,7 @@ func (lm *LoginManager) GetCookie() (string, error) {
 	defer resp.RawBody().Close()
 
 	t := client.GetClient().Jar.Cookies(u)
-	cookies := t[0].String()
+	cookie := t[0].String()
 
 	captcha, err := lm.ExtractCaptcha(resp.RawBody())
 	if err != nil {
@@ -94,24 +106,24 @@ func (lm *LoginManager) GetCookie() (string, error) {
 		"login[sc]":       captcha,
 	}
 	loginResp, err := client.R().
-		SetHeader("Cookie", cookies).
+		SetHeader("Cookie", cookie).
 		SetFormData(formData).
 		Post(loginPostURL)
 	if err != nil {
 		return "", fmt.Errorf("login request failed: %w", err)
 	}
 
-	if !loginResp.IsSuccess() {
-		return "", errors.New("login failed")
+	var result struct {
+		Status  bool
+		Message string
+	}
+	if err := json.Unmarshal(loginResp.Body(), &result); err != nil {
+		return "", errors.New("failed to parse login response")
 	}
 
-	err = os.WriteFile("./data/cookie.txt", []byte(cookies), 0644)
-	if err != nil {
-		return "", fmt.Errorf("failed to save cookie to file: %w", err)
+	if result.Status == false {
+		return "", errors.New(result.Message)
 	}
 
-	log.Println("setting cookie...")
-	lm.HttpClient.SetHeader("Cookie", cookies)
-
-	return cookies, nil
+	return cookie, nil
 }

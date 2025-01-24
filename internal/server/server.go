@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/veirt/sia-helpers/auth"
@@ -10,7 +11,13 @@ import (
 )
 
 func (s *Server) krsHandler(w http.ResponseWriter, r *http.Request) {
-	s.LoginManager.RefreshSession()
+	err := s.LoginManager.RefreshSession()
+	if err != nil {
+		http.Error(w, "failed to refresh session", http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
 	search := r.URL.Query().Get("search")
 	krsData := s.KRSManager.FetchKRSData(search)
 
@@ -25,7 +32,13 @@ func (s *Server) krsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) khsHandler(w http.ResponseWriter, r *http.Request) {
-	s.LoginManager.RefreshSession()
+	err := s.LoginManager.RefreshSession()
+	if err != nil {
+		http.Error(w, "failed to refresh session", http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
 	khsData := s.KHSManager.FetchKHSData()
 
 	jsonData, err := json.Marshal(khsData)
