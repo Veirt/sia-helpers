@@ -26,7 +26,6 @@ func setCookieIfExists() {
 		return
 	}
 
-	log.Println("Cookie exists, using it instead.")
 	restyClient.SetHeader("Cookie", string(cookieFile))
 }
 

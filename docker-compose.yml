@@ -1,12 +1,16 @@
 services:
   sia-helpers:
     container_name: "sia-helpers"
+    image: ghcr.io/veirt/sia-helpers:latest
     build: .
     volumes:
       - ./data:/app/data
     environment:
       - NIM=
       - PASSWORD=
+      # Example: 2024/2025 Ganjil
+      - CURRENT_SEMESTER=
+      - DISCORD_WEBHOOK_URL=
       - TZ=Asia/Makassar
     ports: 
       - 33125:33125
