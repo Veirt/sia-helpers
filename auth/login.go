@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,7 +25,7 @@ type LoginManager struct {
 	Password   string
 }
 
-func (lm *LoginManager) ExtractCaptcha(r io.ReadCloser) (string, error) {
+func (lm *LoginManager) ExtractCaptcha(r io.Reader) (string, error) {
 	doc, err := goquery.NewDocumentFromReader(r)
 	if err != nil {
 		return "", err
@@ -84,17 +85,15 @@ func (lm *LoginManager) GetCookie() (string, error) {
 	u, _ := url.Parse(loginPageURL)
 
 	client := resty.New()
-	resp, err := client.R().SetDoNotParseResponse(true).Get(loginPageURL)
+	resp, err := client.R().Get(loginPageURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch login page: %w", err)
 	}
 
-	defer resp.RawBody().Close()
-
 	t := client.GetClient().Jar.Cookies(u)
 	cookie := t[0].String()
 
-	captcha, err := lm.ExtractCaptcha(resp.RawBody())
+	captcha, err := lm.ExtractCaptcha(bytes.NewBuffer(resp.Body()))
 	if err != nil {
 		return "", fmt.Errorf("failed to get captcha: %w", err)
 	}

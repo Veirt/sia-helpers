@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/veirt/sia-helpers/auth"
 	"github.com/veirt/sia-helpers/khs"
 	"github.com/veirt/sia-helpers/krs"
+	"github.com/veirt/sia-helpers/types"
 )
 
 func (s *Server) krsHandler(w http.ResponseWriter, r *http.Request) {
@@ -32,18 +34,28 @@ func (s *Server) krsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) khsHandler(w http.ResponseWriter, r *http.Request) {
-	err := s.LoginManager.RefreshSession()
-	if err != nil {
-		http.Error(w, "failed to refresh session", http.StatusInternalServerError)
+	var khsItems []types.KHSItem
+	b, err := os.ReadFile(khs.KHSFileName)
+	if err != nil && os.IsNotExist(err) {
+		khsItems, err = s.KHSManager.FetchKHSData()
+		if err != nil {
+			http.Error(w, "failed to fetch khs data", http.StatusInternalServerError)
+			log.Println(err)
+			return
+		}
+
+		s.KHSManager.SaveToFile(khs.KHSFileName)
+	} else if err != nil {
+		http.Error(w, "failed to read khs data", http.StatusInternalServerError)
 		log.Println(err)
 		return
 	}
 
-	khsData := s.KHSManager.FetchKHSData()
-
-	jsonData, err := json.Marshal(khsData)
+	err = json.Unmarshal(b, &khsItems)
+	jsonData, err := json.Marshal(khsItems)
 	if err != nil {
 		http.Error(w, "failed to marshal json", http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 

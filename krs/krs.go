@@ -9,7 +9,7 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-const loadClassURL = "https://ais.unmul.ac.id/mahasiswa/krs/load_kelas"
+const LoadClassURL = "https://ais.unmul.ac.id/mahasiswa/krs/load_kelas"
 
 type LoadClassResponse struct {
 	Status      bool   `json:"status"`
@@ -43,8 +43,8 @@ func (km *KRSManager) FetchKRSData(search string) []KRSItem {
 		"search":    search,
 	}
 
-	client := km.HttpClient.SetDoNotParseResponse(false)
-	resp, err := client.R().SetFormData(formData).Post(loadClassURL)
+	client := km.HttpClient
+	resp, err := client.R().SetFormData(formData).Post(LoadClassURL)
 	if err != nil {
 		log.Printf("failed to fetch KRS: %v", err)
 		return nil

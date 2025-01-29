@@ -11,17 +11,3 @@ services:
     ports: 
       - 33125:33125
     restart: unless-stopped
-  khs-monitor:
-    build: ./khs-monitor
-    container_name: "khs-monitor"
-    environment:
-      - NIM=
-      - PASSWORD=
-      - DISCORD_WEBHOOK_URL=
-      - CURRENT_SEMESTER=
-      - TZ=Asia/Makassar
-    volumes:
-      - /path/to/data:/app/data
-    ports:
-      - 8080:8080
-    restart: unless-stopped

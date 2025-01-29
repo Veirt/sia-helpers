@@ -35,6 +35,7 @@ func main() {
 
 	khsm := khs.KHSManager{
 		HttpClient:      httpClient,
+		LoginManager:    &lm,
 		TrackedSemester: os.Getenv("CURRENT_SEMESTER"),
 	}
 

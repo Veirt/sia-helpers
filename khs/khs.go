@@ -1,91 +1,116 @@
 package khs
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-resty/resty/v2"
+	"github.com/veirt/sia-helpers/auth"
+	"github.com/veirt/sia-helpers/types"
 )
 
 const (
-	khsListURL   = "https://ais.unmul.ac.id/mahasiswa/khs"
-	khsDetailURL = "https://ais.unmul.ac.id/mahasiswa/khs/detail/"
+	KHSListURL   = "https://ais.unmul.ac.id/mahasiswa/khs"
+	KHSDetailURL = "https://ais.unmul.ac.id/mahasiswa/khs/detail/"
 )
-
-type KHSDetailResponse struct {
-	Status  bool   `json:"status"`
-	Message string `json:"message"`
-	Html    string `json:"html"`
-}
 
 type KHSManager struct {
 	HttpClient      *resty.Client
+	LoginManager    *auth.LoginManager
 	TrackedSemester string
+	KHSItems        []types.KHSItem
 }
 
-type KHSItem struct {
-	No            string   `json:"no"`
-	Class         string   `json:"class"`
-	Course        string   `json:"course"`
-	Lecturers     []string `json:"lecturers"`
-	CourseType    string   `json:"course_type"`
-	Credits       string   `json:"credits"`
-	Score         string   `json:"score"`
-	Grade         string   `json:"grade"`
-	Weight        string   `json:"weight"`
-	WeightedScore string   `json:"weighted_score"`
-}
-
-func (khsm *KHSManager) FetchKHSData() []KHSItem {
-	client := khsm.HttpClient.SetDoNotParseResponse(true)
-	resp, err := client.R().Get(khsListURL)
-	if err != nil {
-		log.Printf("failed to fetch KHS: %v", err)
-		return nil
+func (khsm *KHSManager) FetchKHSData() ([]types.KHSItem, error) {
+	client := khsm.HttpClient.Clone().SetRedirectPolicy(resty.NoRedirectPolicy())
+	resp, err := client.R().Get(KHSListURL)
+	if errors.Is(err, resty.ErrAutoRedirectDisabled) {
+		if err := khsm.LoginManager.RefreshSession(); err != nil {
+			return nil, fmt.Errorf("refresh session: %w", err)
+		}
+		resp, err = client.R().Get(KHSListURL)
+		if err != nil {
+			return nil, fmt.Errorf("fetch after refresh: %w", err)
+		}
+	} else if err != nil {
+		return nil, fmt.Errorf("initial fetch: %w", err)
 	}
 
-	doc, err := goquery.NewDocumentFromReader(resp.RawBody())
+	key, err := parseKHSList(bytes.NewBuffer(resp.Body()), khsm.TrackedSemester)
 	if err != nil {
-		log.Printf("failed to parse KHS HTML content: %v", err)
-		return nil
+		return nil, err
+	}
+
+	resp, err = client.R().Get(KHSDetailURL + key)
+	if err != nil {
+		return nil, fmt.Errorf("fetch KHS detail: %w", err)
+	}
+
+	items, err := parseKHSDetail(resp.Body())
+	if err != nil {
+		return nil, err
+	}
+
+	khsm.KHSItems = items
+
+	return items, nil
+}
+
+func (khsm *KHSManager) SaveToFile(name string) {
+	khs, err := json.Marshal(khsm.KHSItems)
+	if err != nil {
+		log.Printf("error marshaling KHS items: %v", err)
+		return
+	}
+
+	err = os.WriteFile(name, khs, 0644)
+	if err != nil {
+		log.Printf("error writing KHS items to file: %v", err)
+	}
+}
+
+func parseKHSList(r io.Reader, trackedSemester string) (string, error) {
+	doc, err := goquery.NewDocumentFromReader(r)
+	if err != nil {
+		return "", fmt.Errorf("parse KHS List HTML content: %w", err)
 	}
 
 	matchingElement := doc.Find(".inbox-data.lihat").FilterFunction(func(i int, s *goquery.Selection) bool {
 		semester := s.Find(".inbox-message > .email-data > span").Text()
-		return semester == khsm.TrackedSemester
+		return semester == trackedSemester
 	}).First()
 
 	key, exists := matchingElement.Attr("data-key")
 	if !exists {
-		log.Fatalln("failed to find data-key attribute")
+		return "", errors.New("failed to find data-key attribute")
 	}
 
-	client.SetDoNotParseResponse(false)
-	resp, err = client.R().Get(khsDetailURL + key)
-	log.Println(khsDetailURL + key)
-	if err != nil {
-		log.Printf("failed to fetch KHS detail: %v", err)
-	}
-
-	var result KHSDetailResponse
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
-		log.Printf("failed to parse response: %v", err)
-		return nil
-	}
-
-	doc, err = goquery.NewDocumentFromReader(strings.NewReader(result.Html))
-	if err != nil {
-		log.Printf("failed to parse KHS HTML content: %v", err)
-		return nil
-	}
-
-	return extractKHSItems(doc)
+	return key, nil
 }
 
-func extractKHSItems(doc *goquery.Document) []KHSItem {
-	var items []KHSItem
+func parseKHSDetail(body []byte) ([]types.KHSItem, error) {
+	var result types.KHSDetailResponse
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("parse KHS Detail response: %w", err)
+	}
+
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(result.Html))
+	if err != nil {
+		return nil, fmt.Errorf("parse KHS Detail HTML content: %w", err)
+	}
+
+	return extractKHSItems(doc), nil
+}
+
+func extractKHSItems(doc *goquery.Document) []types.KHSItem {
+	var items []types.KHSItem
 
 	doc.Find("tbody > tr").Each(func(i int, s *goquery.Selection) {
 		// If the length is 7, it means the user has not filled the questionnaire.
@@ -99,7 +124,7 @@ func extractKHSItems(doc *goquery.Document) []KHSItem {
 			return
 		}
 
-		item := KHSItem{
+		item := types.KHSItem{
 			No:            strings.TrimSpace(s.Find("th").Text()),
 			Class:         strings.TrimSpace(s.Find("td").Eq(0).Text()),
 			Course:        strings.TrimSpace(s.Find("td").Eq(1).Contents().Not("span").Text()),
