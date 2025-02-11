@@ -13,34 +13,19 @@ import (
 )
 
 func (s *Server) krsHandler(w http.ResponseWriter, r *http.Request) {
-	err := s.LoginManager.RefreshSession()
+	search := r.URL.Query().Get("search")
+
+	krsData, err := s.KRSManager.FetchKRSData(search)
 	if err != nil {
-		http.Error(w, "failed to refresh session", http.StatusInternalServerError)
+		http.Error(w, "failed to fetch krs data", http.StatusInternalServerError)
 		log.Println(err)
 		return
 	}
 
-	var krsItems []types.KRSItem
-	b, err := os.ReadFile(krs.KRSFileName)
-	if err != nil && os.IsNotExist(err) {
-		krsItems, err = s.KRSManager.FetchKRSData("")
-		if err != nil {
-			http.Error(w, "failed to fetch KRS data", http.StatusInternalServerError)
-			log.Println(err)
-			return
-		}
-
-		s.KRSManager.SaveToFile(krs.KRSFileName)
-	} else if err != nil {
-		http.Error(w, "failed to read KRS data", http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-
-	err = json.Unmarshal(b, &krsItems)
-	jsonData, err := json.Marshal(krsItems)
+	jsonData, err := json.Marshal(krsData)
 	if err != nil {
 		http.Error(w, "failed to marshal json", http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 
