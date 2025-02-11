@@ -75,6 +75,6 @@ func compareKHSData(oldKHS, newKHS []types.KHSItem) bool {
 }
 
 func notifyChange(old, new types.KHSItem) {
-	webhook.NotifyDiscordWithKHSUpdate(old, new)
-	webhook.NotifyWhatsAppWithKHSUpdate(old, new)
+	webhook.NotifyDiscord(webhook.BuildKHSDiscordEmbed(old, new))
+	webhook.NotifyWhatsApp(webhook.BuildKHSWhatsAppMessage(old, new))
 }

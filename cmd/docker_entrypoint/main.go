@@ -14,10 +14,17 @@ func main() {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 
-	cmdMonitor := exec.Command("/app/khs_monitor")
-	cmdMonitor.Stdout = os.Stdout
-	cmdMonitor.Stderr = os.Stderr
-	if err := cmdMonitor.Start(); err != nil {
+	krsMonitor := exec.Command("/app/krs_monitor")
+	krsMonitor.Stdout = os.Stdout
+	krsMonitor.Stderr = os.Stderr
+	if err := krsMonitor.Start(); err != nil {
+		log.Fatalf("Failed to start krs_monitor: %v", err)
+	}
+
+	khsMonitor := exec.Command("/app/khs_monitor")
+	khsMonitor.Stdout = os.Stdout
+	khsMonitor.Stderr = os.Stderr
+	if err := khsMonitor.Start(); err != nil {
 		log.Fatalf("Failed to start khs_monitor: %v", err)
 	}
 
@@ -25,7 +32,10 @@ func main() {
 	if err := cmdServer.Wait(); err != nil {
 		log.Printf("Server exited with error: %v", err)
 	}
-	if err := cmdMonitor.Wait(); err != nil {
+	if err := krsMonitor.Wait(); err != nil {
+		log.Printf("KRS Monitor exited with error: %v", err)
+	}
+	if err := khsMonitor.Wait(); err != nil {
 		log.Printf("KHS Monitor exited with error: %v", err)
 	}
 }

@@ -2,7 +2,6 @@ package webhook
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/veirt/sia-helpers/types"
@@ -12,7 +11,15 @@ type WhatsAppWebhookPayload struct {
 	Message string `json:"message"`
 }
 
-func BuildWhatsAppMessage(old types.KHSItem, new types.KHSItem) string {
+func BuildKRSWhatsAppMessage(old, new types.KRSItem) string {
+	return fmt.Sprintf(`*[KRS Monitor]*
+*%s - %s*
+
+Kuota: %s -> %s`,
+		old.Course, old.Class, old.QuotaNow, new.QuotaNow)
+}
+
+func BuildKHSWhatsAppMessage(old, new types.KHSItem) string {
 	return fmt.Sprintf(`*%s*
 
 Nilai: %s -> %s
@@ -23,14 +30,11 @@ SKS x Bobot: %s`,
 	)
 }
 
-func NotifyWhatsAppWithKHSUpdate(old types.KHSItem, new types.KHSItem) {
+func NotifyWhatsApp(message string) error {
 	webhookURL := os.Getenv("WHATSAPP_WEBHOOK_URL")
 	if webhookURL == "" {
-		log.Println("WHATSAPP_WEBHOOK_URL is not set. Cannot send WhatsApp notification.")
-		return
+		return fmt.Errorf("WHATSAPP_WEBHOOK_URL is not set. Cannot send WhatsApp notification")
 	}
-
-	message := BuildWhatsAppMessage(old, new)
 
 	webhook := Webhook{
 		URL: webhookURL,
@@ -43,6 +47,8 @@ func NotifyWhatsAppWithKHSUpdate(old types.KHSItem, new types.KHSItem) {
 	}
 
 	if err := webhook.Send(); err != nil {
-		log.Printf("Failed to send WhatsApp webhook: %v", err)
+		return fmt.Errorf("failed to send WhatsApp webhook: %w", err)
 	}
+
+	return nil
 }

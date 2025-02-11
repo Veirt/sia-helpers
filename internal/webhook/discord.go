@@ -2,7 +2,6 @@ package webhook
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/veirt/sia-helpers/types"
@@ -11,50 +10,45 @@ import (
 type DiscordWebhookPayload struct {
 	Embeds []DiscordEmbed `json:"embeds"`
 }
+
 type DiscordEmbedField struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
+
 type DiscordEmbed struct {
 	Title  string              `json:"title"`
 	Fields []DiscordEmbedField `json:"fields"`
 }
 
-func BuildDiscordEmbed(old types.KHSItem, new types.KHSItem) DiscordEmbed {
+func BuildKRSDiscordEmbed(old, new types.KRSItem) DiscordEmbed {
 	return DiscordEmbed{
-		Title: old.Course,
+		Title: fmt.Sprintf("%s - %s", old.Course, old.Class),
 		Fields: []DiscordEmbedField{
-			{
-				Name:  "Nilai",
-				Value: fmt.Sprintf("%s -> %s", old.Score, new.Score),
-			},
-			{
-				Name:  "Predikat",
-				Value: new.Grade,
-			},
-			{
-				Name:  "Bobot",
-				Value: new.Weight,
-			},
-			{
-				Name:  "SKS x Bobot",
-				Value: new.WeightedScore,
-			},
+			{"Kuota", fmt.Sprintf("%s -> %s", old.QuotaNow, new.QuotaNow)},
 		},
 	}
 }
 
-func NotifyDiscordWithKHSUpdate(old types.KHSItem, new types.KHSItem) {
+func BuildKHSDiscordEmbed(old, new types.KHSItem) DiscordEmbed {
+	return DiscordEmbed{
+		Title: old.Course,
+		Fields: []DiscordEmbedField{
+			{"Nilai", fmt.Sprintf("%s -> %s", old.Score, new.Score)},
+			{"Predikat", new.Grade},
+			{"Bobot", new.Weight},
+			{"SKS x Bobot", new.WeightedScore},
+		},
+	}
+}
+
+func NotifyDiscord(message DiscordEmbed) error {
 	webhookURL := os.Getenv("DISCORD_WEBHOOK_URL")
 	if webhookURL == "" {
-		log.Println("DISCORD_WEBHOOK_URL is not set. Cannot send Discord notification.")
-		return
+		return fmt.Errorf("DISCORD_WEBHOOK_URL is not set. Cannot send Discord notification")
 	}
 
-	embed := BuildDiscordEmbed(old, new)
-	payload := DiscordWebhookPayload{
-		Embeds: []DiscordEmbed{embed},
-	}
+	payload := DiscordWebhookPayload{Embeds: []DiscordEmbed{message}}
 
 	webhook := Webhook{
 		URL: webhookURL,
@@ -65,6 +59,8 @@ func NotifyDiscordWithKHSUpdate(old types.KHSItem, new types.KHSItem) {
 	}
 
 	if err := webhook.Send(); err != nil {
-		log.Printf("Failed to send Discord webhook: %v", err)
+		return fmt.Errorf("failed to send Discord webhook: %w", err)
 	}
+
+	return nil
 }

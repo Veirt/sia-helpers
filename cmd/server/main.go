@@ -30,7 +30,8 @@ func main() {
 	}
 
 	km := krs.KRSManager{
-		HttpClient: httpClient,
+		HttpClient:   httpClient,
+		LoginManager: &lm,
 	}
 
 	khsm := khs.KHSManager{

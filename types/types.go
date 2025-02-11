@@ -18,3 +18,15 @@ type KHSItem struct {
 	Weight        string   `json:"weight"`
 	WeightedScore string   `json:"weighted_score"`
 }
+
+type KRSItem struct {
+	Semester   string   `json:"semester"`
+	Course     string   `json:"course"`
+	Class      string   `json:"class"`
+	Curriculum string   `json:"curriculum"`
+	Credits    string   `json:"credits"`
+	CourseType string   `json:"course_type"` // Wajib / Pilihan (WP)
+	QuotaNow   string   `json:"quota_now"`
+	QuotaMax   string   `json:"quota_max"`
+	Lecturers  []string `json:"lecturers"`
+}
