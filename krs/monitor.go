@@ -68,17 +68,17 @@ func compareKRSData(oldKRS, newKRS []types.KRSItem, trackedClasses []string) boo
 
 		old := oldKRS[idx]
 		if old.QuotaNow != new.QuotaNow {
+			changed = true
+
 			if len(trackedClasses) > 0 {
 				if slices.Index(trackedClasses, new.Class) == -1 {
-					log.Printf("[UNTRACKED] Quota change detected for course %s: %s -> %s", new.Course, old.QuotaNow, new.QuotaNow)
-					changed = true
+					log.Printf("[UNTRACKED] Quota change detected for course %s %s: %s -> %s", new.Course, new.Class, old.QuotaNow, new.QuotaNow)
 					continue
 				}
 			}
 
 			log.Printf("[TRACKED] Quota change detected for course %s %s: %s -> %s", new.Course, new.Class, old.QuotaNow, new.QuotaNow)
 			notifyChange(old, new)
-			changed = true
 		}
 	}
 
