@@ -55,7 +55,7 @@ func main() {
 	log.Println("[KRS Monitor] Tracked Classes:", trackedClasses.Classes)
 
 	c.AddFunc(expr, func() {
-		krsm.KRSItems = krsm.CheckKRSChanges()
+		krsm.CheckKRSChanges()
 	})
 
 	c.Start()

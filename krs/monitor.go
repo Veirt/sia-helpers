@@ -32,6 +32,7 @@ func (km *KRSManager) CheckKRSChanges() []types.KRSItem {
 
 	newKRS, err := km.FetchKRSData("")
 	if changed := compareKRSData(oldKRS, newKRS, km.TrackedClasses); changed {
+		km.KRSItems = newKRS
 		km.SaveToFile(KRSFileName)
 	}
 
