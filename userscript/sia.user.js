@@ -120,7 +120,11 @@ function redirectIfLoggedIn() {
     });
 }
 
-function fixStarAbsenceOnDesktop() {
+/*
+  Normally, isMobileDevice() will check the user agent.
+  This function will mock the function to always return true. (STAR)
+*/
+function mockMobile() {
     window.isMobileDevice = function () {
         return true;
     };
@@ -155,7 +159,7 @@ if (host.startsWith("star")) {
             loginAutomatically();
             break;
         case "/mahasiswa/kelas":
-            fixStarAbsenceOnDesktop();
+            mockMobile();
             break;
     }
 }
