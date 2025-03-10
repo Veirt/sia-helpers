@@ -6,6 +6,8 @@
 // @grant       none
 // @version     1.1.0
 // @author      Miez & Veirt
+// @updateURL   https://veirt.github.io/sia-helpers/sia.user.js
+// @downloadURL https://veirt.github.io/sia-helpers/sia.user.js
 // @description 07/31/2024, 11:16:02 AM
 // ==/UserScript==
 
