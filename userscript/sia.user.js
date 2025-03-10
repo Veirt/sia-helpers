@@ -4,7 +4,7 @@
 // @match       *://ais.unmul.ac.id/*
 // @match       *://star.unmul.ac.id/*
 // @grant       none
-// @version     1.0.7
+// @version     1.1.0
 // @author      Miez & Veirt
 // @description 07/31/2024, 11:16:02 AM
 // ==/UserScript==
