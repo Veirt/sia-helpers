@@ -24,5 +24,6 @@ COPY --from=builder /app/entrypoint .
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 EXPOSE 33125/tcp
+EXPOSE 33126/tcp
 
 CMD ["/app/entrypoint"]

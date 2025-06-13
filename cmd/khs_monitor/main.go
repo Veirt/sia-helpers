@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -14,7 +16,6 @@ import (
 func main() {
 	godotenv.Load()
 
-	// Getting credentials
 	nim := os.Getenv("NIM")
 	password := os.Getenv("PASSWORD")
 	if nim == "" || password == "" {
@@ -33,20 +34,34 @@ func main() {
 		LoginManager:    &lm,
 		TrackedSemester: os.Getenv("CURRENT_SEMESTER"),
 	}
-	log.Println("[KHS Monitor] Currently tracked semester:", khsm.TrackedSemester)
-	c := cron.New()
 
+	log.Println("[KHS Monitor] Currently tracked semester:", khsm.TrackedSemester)
+
+	// Cron scheduler
+	c := cron.New()
 	expr := os.Getenv("KHS_CHECK_INTERVAL")
 	if expr == "" {
-		expr = "@every 00h05m00s" // default to every 5 minutes
+		expr = "@every 00h05m00s"
 	}
 	log.Println("[KHS Monitor] Interval:", expr)
-
 	c.AddFunc(expr, func() {
+		log.Println("[KHS Monitor] Triggered by cron")
 		khsm.CheckKHSChanges()
 	})
-
 	c.Start()
+
+	// Manual trigger endpoint
+	http.HandleFunc("/trigger", func(w http.ResponseWriter, r *http.Request) {
+		go khsm.CheckKHSChanges()
+		fmt.Fprintln(w, "Manual check triggered")
+	})
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "33126"
+	}
+	log.Println("[KHS Monitor] Listening for manual triggers on port", port)
+	go http.ListenAndServe(":"+port, nil)
 
 	select {}
 }
