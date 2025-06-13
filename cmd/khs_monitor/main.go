@@ -51,7 +51,7 @@ func main() {
 	c.Start()
 
 	// Manual trigger endpoint
-	http.HandleFunc("/trigger", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/khs-monitor/trigger", func(w http.ResponseWriter, r *http.Request) {
 		go khsm.CheckKHSChanges()
 		fmt.Fprintln(w, "Manual check triggered")
 	})
