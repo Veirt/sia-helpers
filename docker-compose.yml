@@ -12,6 +12,7 @@ services:
       - CURRENT_SEMESTER=
       - DISCORD_WEBHOOK_URL=
       - TZ=Asia/Makassar
-    ports: 
+    ports:
       - 33125:33125
+      - 33126:33126
     restart: unless-stopped
