@@ -50,7 +50,7 @@ func (km *KRSManager) FetchKRSData(search string) ([]types.KRSItem, error) {
 	// TODO: Figure out about semester, prodi later.
 	formData := map[string]string{
 		"kurikulum": "1143",
-		"semester":  "20242",
+		"semester":  "20251",
 		"prodi":     "191",
 		"fakultas":  "7",
 		"search":    search,

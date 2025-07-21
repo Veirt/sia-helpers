@@ -10,6 +10,8 @@ services:
       - 33125:33125
       - 33126:33126
     restart: unless-stopped
+    depends_on:
+      - login-service
   login-service:
     container_name: "sia-helpers-login-service"
     build:

@@ -21,7 +21,7 @@ def login():
         xvfb=True,
         xvfb_metrics="1920,1080",
     ) as sb:
-        sb.activate_cdp_mode(LOGIN_PAGE_URL, headless=True)
+        sb.activate_cdp_mode(LOGIN_PAGE_URL, headless=False)
         sb.maximize_window()
         sb.sleep(4)
         sb.uc_gui_click_captcha()
