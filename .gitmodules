@@ -1,0 +1,3 @@
+[submodule "login-service/SeleniumBase"]
+	path = login-service/SeleniumBase
+	url = https://github.com/seleniumbase/SeleniumBase.git

@@ -5,14 +5,16 @@ services:
     build: .
     volumes:
       - ./data:/app/data
-    environment:
-      - NIM=
-      - PASSWORD=
-      # Example: 2024/2025 Ganjil
-      - CURRENT_SEMESTER=
-      - DISCORD_WEBHOOK_URL=
-      - TZ=Asia/Makassar
+    env_file: .env
     ports:
       - 33125:33125
       - 33126:33126
+    restart: unless-stopped
+  login-service:
+    container_name: "sia-helpers-login-service"
+    build:
+      context: login-service
+    env_file: .env
+    ports:
+      - 8000:8000
     restart: unless-stopped
