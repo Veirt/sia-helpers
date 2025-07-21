@@ -23,10 +23,12 @@ func main() {
 	}
 
 	httpClient := httpclient.GetClient()
+	loginServiceURL := os.Getenv("LOGIN_SERVICE_URL")
 	lm := auth.LoginManager{
-		HttpClient: httpClient,
-		Nim:        nim,
-		Password:   password,
+		HttpClient:      httpClient,
+		Nim:             nim,
+		Password:        password,
+		LoginServiceURL: loginServiceURL,
 	}
 
 	km := krs.KRSManager{

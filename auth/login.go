@@ -10,14 +10,11 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-var (
-	loginServiceURL = os.Getenv("LOGIN_SERVICE_URL")
-)
-
 type LoginManager struct {
-	HttpClient *resty.Client
-	Nim        string
-	Password   string
+	HttpClient      *resty.Client
+	Nim             string
+	Password        string
+	LoginServiceURL string
 }
 
 func (lm *LoginManager) CheckSession() (bool, error) {
@@ -63,7 +60,7 @@ func (lm *LoginManager) RefreshSession() error {
 
 func (lm *LoginManager) GetCookie() (string, error) {
 	log.Println("getting login cookie...")
-	u := fmt.Sprintf("%s/api/login", loginServiceURL)
+	u := fmt.Sprintf("%s/api/login", lm.LoginServiceURL)
 
 	client := resty.New()
 	resp, err := client.R().Get(u)
