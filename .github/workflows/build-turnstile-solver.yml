@@ -10,7 +10,7 @@ on:
       - "master"
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-login-service
+  IMAGE_NAME: ${{ github.repository }}-turnstile-solver
 jobs:
   docker:
     runs-on: ubuntu-latest
@@ -43,7 +43,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: login-service
+          context: Turnstile-Solver/Docker
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

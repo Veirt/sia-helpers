@@ -1,3 +1,6 @@
 [submodule "login-service/SeleniumBase"]
 	path = login-service/SeleniumBase
 	url = https://github.com/seleniumbase/SeleniumBase.git
+[submodule "Turnstile-Solver"]
+	path = Turnstile-Solver
+	url = https://github.com/Theyka/Turnstile-Solver

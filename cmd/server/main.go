@@ -23,12 +23,12 @@ func main() {
 	}
 
 	httpClient := httpclient.GetClient()
-	loginServiceURL := os.Getenv("LOGIN_SERVICE_URL")
+	turnstileSolverURL := os.Getenv("TURNSTILE_SOLVER_URL")
 	lm := auth.LoginManager{
-		HttpClient:      httpClient,
-		Nim:             nim,
-		Password:        password,
-		LoginServiceURL: loginServiceURL,
+		HttpClient:         httpClient,
+		Nim:                nim,
+		Password:           password,
+		TurnstileSolverURL: turnstileSolverURL,
 	}
 
 	km := krs.KRSManager{
