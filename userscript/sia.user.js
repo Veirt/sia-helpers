@@ -4,7 +4,7 @@
 // @match       *://ais.unmul.ac.id/*
 // @match       *://star.unmul.ac.id/*
 // @grant       none
-// @version     1.1.0
+// @version     1.1.1
 // @author      Miez & Veirt
 // @updateURL   https://veirt.github.io/sia-helpers/sia.user.js
 // @downloadURL https://veirt.github.io/sia-helpers/sia.user.js
@@ -70,18 +70,139 @@ function loginAutomatically() {
 /*
    Fill questionnaire automatically with the keybind <Alt>-q (AIS)
 */
-function fillQuestionnaire() {
-    const radioForms = document.querySelectorAll(".col-sm-4 > .radio-form");
-
-    for (const radioForm of radioForms) {
-        // index 2 to 4 ( rating 3 to 5 )
-        const random = getRandomInt(2, 5);
-
-        const radios = radioForm.children;
-        const radio = radios[random].children[0];
-        radio.checked = true;
-    }
+function fillQuestionnaire(nilai) {
+    document.querySelectorAll('.form-check-input').forEach(button => {
+        if (button.value === nilai) button.checked = true;
+    });
 }
+
+function fillQuestionnaireRandom(rentang) {
+    const skalaPenilaian = document.querySelectorAll('.form-check-input');
+    const groups = {};
+
+    skalaPenilaian.forEach(button => {
+        if (!groups[button.name]) groups[button.name] = [];
+        groups[button.name].push(button);
+    });
+
+    Object.values(groups).forEach(buttons => {
+        const filtered = buttons.filter(button => rentang.includes(parseInt(button.value)));
+        const randomButton = filtered[Math.floor(Math.random() * filtered.length)];
+        randomButton.checked = true;
+    });
+}
+
+function resetQuestionnaire() {
+    document.querySelectorAll('.form-check-input').forEach(button => {
+       button.checked = false;
+    });
+}
+
+let isAutoFilling = false; // Flag toggle for autofilling.
+
+function autoFillQuestionnaire() {
+    if (isAutoFilling) {
+        isAutoFilling = false;
+        console.log("Autofill dimatikan.");
+        return;
+    }
+
+    isAutoFilling = true;
+    console.log("Autofill dinyalakan.");
+    let matkulIndex = parseInt(sessionStorage.getItem('currentMatkulIndex')) || 0;
+    let dosenIndex = parseInt(sessionStorage.getItem('currentDosenIndex')) || 0;
+
+    function isiDosenBerikutnya() {
+        if (!isAutoFilling) return;
+
+        const mataKuliahRows = document.querySelectorAll('tr');
+        if (matkulIndex >= mataKuliahRows.length) {
+            sessionStorage.clear();
+            isAutoFilling = false;
+            console.log("Semua kuesioner selesai.");
+            return;
+        }
+
+        const currentMatkulRow = mataKuliahRows[matkulIndex];
+        const dosenBadges = currentMatkulRow.querySelectorAll('.badge-primary');
+        const kuisionerButton = currentMatkulRow.querySelector('.kuisioner');
+
+        if (!dosenBadges || dosenIndex >= dosenBadges.length) {
+            matkulIndex++;
+            dosenIndex = 0;
+            sessionStorage.setItem('currentMatkulIndex', matkulIndex);
+            sessionStorage.setItem('currentDosenIndex', dosenIndex);
+            setTimeout(isiDosenBerikutnya, 1000);
+            return;
+        }
+
+        if (kuisionerButton && isButtonVisible(kuisionerButton)) {
+            sessionStorage.setItem('currentMatkulIndex', matkulIndex);
+            sessionStorage.setItem('currentDosenIndex', dosenIndex);
+
+            kuisionerButton.click();
+
+            setTimeout(() => {
+                isiKuesionerUntukDosen(() => {
+                    if (isAutoFilling) {
+                        dosenIndex++;
+                        setTimeout(isiDosenBerikutnya, 1500);
+                    }
+                });
+            }, 2500);
+        } else {
+            dosenIndex++;
+            setTimeout(isiDosenBerikutnya, 2000);
+        }
+    }
+
+    function isiKuesionerUntukDosen(callback) {
+        let step = 0;
+
+        function klikNextStep() {
+            if (!isAutoFilling) return;
+            if (step < 5) {
+                const nextButton = document.getElementById('nextbtn');
+                if (nextButton) {
+                    fillQuestionnaireRandom([4, 5]);
+                    setTimeout(() => {
+                        nextButton.click();
+                        step++;
+                        setTimeout(klikNextStep, 1500);
+                    }, 1000);
+                } else {
+                    setTimeout(klikNextStep, 2000);
+                }
+            } else {
+                klikSubmit(callback);
+            }
+        }
+
+        function klikSubmit(callback) {
+            if (!isAutoFilling) return;
+            const submitButton = document.querySelector('button[type="submit"], button#nextbtn');
+            if (submitButton) {
+                setTimeout(() => {
+                    submitButton.click();
+                    setTimeout(callback, 1500);
+                }, 1000);
+            } else {
+                setTimeout(() => klikSubmit(callback), 2000);
+            }
+        }
+
+        klikNextStep();
+    }
+
+    function isButtonVisible(button) {
+        const style = window.getComputedStyle(button);
+        return button && button.offsetParent !== null &&
+            style.display !== 'none' && style.visibility !== 'hidden';
+    }
+
+    isiDosenBerikutnya();
+}
+// Warning: The automatic questionnaire in this version is currently unstable. Please use the stable version at: https://github.com/miezlearning/cheat-ais
 
 /*
    Fill CAPTCHA automatically. (AIS/STAR)
@@ -145,7 +266,15 @@ if (host.startsWith("ais")) {
 
         case "/mahasiswa/khs":
             document.addEventListener("keydown", (e) => {
-                if (e.key.toLowerCase() === "q" && e.altKey) fillQuestionnaire();
+                if (e.altKey) {
+                    if (e.key === "1") fillQuestionnaire("1");
+                    else if (e.key === "2") fillQuestionnaire("2");
+                    else if (e.key === "3") fillQuestionnaire("3");
+                    else if (e.key === "4") fillQuestionnaire("4");
+                    else if (e.key === "5") fillQuestionnaire("5");
+                    else if (e.key.toLowerCase() === "q") autoFillQuestionnaire();
+                    else if (e.key.toLowerCase() === "p") resetQuestionnaire();
+                }
             });
             break;
     }
