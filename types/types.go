@@ -28,5 +28,6 @@ type KRSItem struct {
 	CourseType string   `json:"course_type"` // Wajib / Pilihan (WP)
 	QuotaNow   string   `json:"quota_now"`
 	QuotaMax   string   `json:"quota_max"`
+	Schedule   string   `json:"schedule"`
 	Lecturers  []string `json:"lecturers"`
 }

@@ -101,6 +101,8 @@ func extractKRSItems(doc *goquery.Document) []types.KRSItem {
 	var items []types.KRSItem
 
 	doc.Find("#paginated-list > li").Each(func(i int, s *goquery.Selection) {
+		day := s.Find(".email-timing > span").Contents().First().Text()
+		time := s.Find(".email-timing > span").Contents().Last().Text()
 		item := types.KRSItem{
 			Semester:   getTrimmedText(s.Find(".inbox-user > .form-check.form-check-inline.m-0 > span"), "Smt. ", ""),
 			Course:     strings.TrimSpace(s.Find(".inbox-user p").Text()),
@@ -108,6 +110,7 @@ func extractKRSItems(doc *goquery.Document) []types.KRSItem {
 			Curriculum: strings.TrimSpace(s.Find(".inbox-message > .email-data > span > span").Text()),
 			Credits:    getTrimmedText(s.Find(".inbox-message > .email-data > .badge-light-primary"), "", " SKS"),
 			CourseType: strings.TrimSpace(s.Find(".inbox-message > .email-data > .badge-light-success,.badge-light-warning").Text()),
+			Schedule:   fmt.Sprintf("%s, %s", strings.TrimSpace(day), strings.TrimSpace(time)),
 		}
 
 		quotaString := strings.TrimSpace(s.Find(".inbox-message > .email-data > .badge-light-info,.badge-light-danger").Text())
