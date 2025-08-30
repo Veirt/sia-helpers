@@ -10,17 +10,3 @@ services:
       - 33125:33125
       - 33126:33126
     restart: unless-stopped
-    depends_on:
-      turnstile-solver:
-        condition: service_healthy
-  turnstile-solver:
-    container_name: "turnstile-solver"
-    environment:
-      - TZ=Asia/Makassar
-      - RUN_API_SOLVER=true
-    build:
-      context: Turnstile-Solver/Docker
-    ports:
-      - 5000:5000
-      - 3389:3389
-    restart: unless-stopped

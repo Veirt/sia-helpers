@@ -33,14 +33,14 @@ func (khsm *KHSManager) FetchKHSData() ([]types.KHSItem, error) {
 	resp, err := client.R().Get(KHSListURL)
 	if errors.Is(err, resty.ErrAutoRedirectDisabled) {
 		if err := khsm.LoginManager.RefreshSession(); err != nil {
-			return nil, fmt.Errorf("refresh session: %w", err)
+			return nil, fmt.Errorf("failed to refresh session: %w", err)
 		}
 		resp, err = client.R().Get(KHSListURL)
 		if err != nil {
-			return nil, fmt.Errorf("fetch after refresh: %w", err)
+			return nil, fmt.Errorf("failed to fetch after refresh: %w", err)
 		}
 	} else if err != nil {
-		return nil, fmt.Errorf("initial fetch: %w", err)
+		return nil, fmt.Errorf("failed to do initial fetch: %w", err)
 	}
 
 	key, err := parseKHSList(bytes.NewBuffer(resp.Body()), khsm.TrackedSemester)
